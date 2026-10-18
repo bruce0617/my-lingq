@@ -1,0 +1,1447 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>My LingQ</title>
+<style>
+:root{
+  --bg:#f6f5f2;--card:#fff;--text:#1f2328;--muted:#6b7280;--line:#e5e3de;--accent:#2f6fde;
+  --new:#cfe2ff;--l1:#ffd966;--l2:#ffe48f;--l3:#ffefb8;--l4:#fff7dc;--play:#e3f4e8;--ok:#2e9e5b;--phl:#d99a00;--thumb:#33427a;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#17181a;--card:#222326;--text:#e8e8e8;--muted:#9aa0a6;--line:#34363a;--accent:#7aa7ff;
+  --new:#22426e;--l1:#7a5d0c;--l2:#634d14;--l3:#4d3f1a;--l4:#3a331f;--play:#1d3a28;--phl:#e0b030;
+}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.6 -apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Segoe UI",sans-serif;-webkit-text-size-adjust:100%}
+button{font:inherit;cursor:pointer;border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:8px;padding:6px 12px}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+button.on{outline:2px solid var(--accent)}
+input,textarea,select{font:inherit;font-size:16px;color:var(--text);background:var(--card);border:1px solid var(--line);border-radius:8px;padding:8px;width:100%}
+header{position:sticky;top:0;z-index:5;display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:10px 16px;padding-top:max(10px,env(safe-area-inset-top));background:var(--card);border-bottom:1px solid var(--line)}
+header h1{font-size:18px;margin:0 6px 0 0}
+header .stat{margin-left:auto;color:var(--muted);font-size:14px}
+.badge{display:inline-block;min-width:18px;padding:0 5px;border-radius:9px;background:var(--accent);color:#fff;font-size:12px;line-height:18px;text-align:center}
+main{max-width:1100px;margin:0 auto;padding:16px}
+.hidden{display:none!important}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:12px}
+.muted{color:var(--muted);font-size:14px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.tabs button{border-radius:20px}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px;vertical-align:middle}
+/* 서재 카드 */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px;margin-bottom:12px}
+.lcard{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden;cursor:pointer;display:flex;flex-direction:column}
+.thumb{aspect-ratio:16/9;background:var(--thumb) center/cover no-repeat;position:relative;display:grid;place-items:center;color:#fff;font-size:34px;font-weight:700}
+.counts{position:absolute;left:8px;bottom:8px;display:flex;gap:6px}
+.counts span{background:rgba(0,0,0,.65);color:#fff;border-radius:10px;padding:0 8px;font-size:13px;line-height:20px}
+.newbar{height:4px;background:var(--new)}.newbar i{display:block;height:100%;background:var(--ok)}
+.lbody{padding:8px 10px 10px;flex:1;display:flex;flex-direction:column;gap:4px}
+.lbody b{font-size:15px;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.lfoot{display:flex;justify-content:space-between;align-items:center;margin-top:auto}
+.ldel{border:none;background:none;color:var(--muted);padding:0 4px;font-size:13px}
+/* 리더 */
+.reader{display:grid;grid-template-columns:1fr 340px;gap:16px;align-items:start}
+#text{font-size:20px;line-height:2}
+#text p{margin:0 0 1em}
+.sent{border-radius:6px;transition:background .2s}
+.sent.playing{background:var(--play)}
+/* 문장 보기: 현재 문장 하나만 크게 (LingQ Sentence View) */
+#text.focus{min-height:6em;display:flex;flex-direction:column;justify-content:center}
+#text.focus p{display:contents}
+#text.focus .sent{display:none}
+#text.focus .sent.cur{display:block;font-size:24px;line-height:2;background:none}
+#text{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none} /* 기본 텍스트 선택 대신 직접 드래그 */
+.w{border-radius:4px;padding:1px 1px;cursor:pointer}
+.w.drag{background:var(--accent)!important;color:#fff}
+#pTrans{font-size:17px;margin:8px 0;padding:8px 10px;border-radius:8px;background:var(--play)}
+.w.sn{background:var(--new)}
+.w.s1{background:var(--l1)}.w.s2{background:var(--l2)}.w.s3{background:var(--l3)}.w.s4{background:var(--l4)}
+.w.ph{text-decoration:underline dotted var(--phl);text-decoration-thickness:2px;text-underline-offset:6px}
+.w.sel{outline:2px solid var(--accent)}
+.player select{width:auto}
+.video{position:sticky;top:56px;z-index:4;aspect-ratio:16/9;max-height:45vh;margin:0 auto 12px;border-radius:12px;overflow:hidden;background:#000}
+.video iframe{width:100%;height:100%;border:0;display:block}
+.lq{display:flex;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);cursor:pointer}
+.lq:last-child{border-bottom:none}
+.lv{width:28px;height:28px;border-radius:50%;background:var(--l1);display:grid;place-items:center;font-size:14px;flex:none}
+#sTransText{font-size:16px;margin:8px 0;padding:8px 10px;border-left:3px solid var(--accent)}
+#panel{position:sticky;top:70px}
+#panel .word{font-size:24px;font-weight:700;word-break:break-word}
+.status button{min-width:40px;border-radius:20px}
+.chips button{border-radius:16px;font-size:14px;padding:3px 10px;margin:2px 0}
+.defs{max-height:200px;overflow:auto;font-size:14px;padding-left:20px}
+.defs li{margin-bottom:4px}
+.links a{color:var(--accent);font-size:14px;margin-right:10px}
+.ex{font-size:14px;color:var(--muted);font-style:italic}
+/* 단어장 */
+.vrow{display:grid;grid-template-columns:1.2fr 1fr auto;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+.vrow .status button{min-width:34px;padding:4px 8px}
+/* 복습 */
+.flash{text-align:center;padding:32px 16px}
+.flash .word{font-size:34px;font-weight:700;word-break:break-word}
+.flash .word.long{font-size:22px;line-height:1.5} /* 문장 통째로 저장한 카드 */
+.flash .meaning{font-size:22px;margin:12px 0}
+/* 통계 */
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px}
+.tile{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px}
+.tile b{display:block;font-size:28px}
+table{width:100%;border-collapse:collapse}
+td,th{padding:8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+@media (max-width:800px){
+  main{padding:12px 16px}
+  .reader{grid-template-columns:1fr}
+  #text{font-size:19px}
+  #text.focus .sent.cur{font-size:22px}
+  .vrow{grid-template-columns:1fr}
+  .player{gap:6px}
+  .player button,.player select{padding:5px 8px;font-size:14px}
+  #sentPos{width:100%}
+  body.panel-open main{padding-bottom:55vh} /* 단어 창 높이만큼 스크롤 여유 */
+  #panel{position:fixed;left:0;right:0;bottom:0;top:auto;margin:0;border-radius:16px 16px 0 0;max-height:50vh;overflow:auto;
+    box-shadow:0 -4px 20px rgba(0,0,0,.15);z-index:10;padding-bottom:max(16px,env(safe-area-inset-bottom))}
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>📚 My LingQ</h1>
+  <button data-view="library">서재</button>
+  <button data-view="vocab">단어장</button>
+  <button data-view="review">복습 <span class="badge hidden" id="dueBadge"></span></button>
+  <button data-view="stats">통계</button>
+  <span class="stat" id="stat"></span>
+  <button id="authBtn" class="hidden" title="구글 로그인하면 아이폰·Mac 동기화">☁️ 로그인</button>
+  <span class="muted" id="syncStatus"></span>
+</header>
+
+<main>
+  <!-- 서재 -->
+  <section id="v-library">
+    <div class="card">
+      <div class="row tabs" style="margin-bottom:10px">
+        <b style="margin-right:4px">새 레슨</b>
+        <button data-src="youtube" class="on">🎬 유튜브</button>
+        <button data-src="paste">붙여넣기</button>
+        <button data-src="url">웹 기사 링크</button>
+        <button data-src="file">파일 (txt·자막)</button>
+      </div>
+      <div id="src-youtube" style="margin-bottom:8px">
+        <input id="ytInput" type="url" placeholder="https://youtu.be/… 유튜브 영상 주소를 붙여넣으세요" style="margin-bottom:6px">
+        <div id="ytStatus" class="muted">주소를 넣으면 자막을 자동으로 가져와요. 가져온 자막은 아래 칸에서 고칠 수 있어요.</div>
+      </div>
+      <div id="src-url" class="hidden row" style="margin-bottom:8px">
+        <input id="urlInput" type="url" placeholder="https://… 영어 기사 주소" style="flex:1;min-width:200px">
+        <button id="urlFetch">불러오기</button>
+        <div class="muted" style="width:100%">기사 본문 추출에 무료 서비스(r.jina.ai)를 사용해요. 불러온 뒤 아래에서 수정할 수 있어요.</div>
+      </div>
+      <div id="src-file" class="hidden" style="margin-bottom:8px">
+        <input id="fileInput" type="file" accept=".txt,.srt,.vtt,text/plain">
+        <div class="muted">유튜브 등에서 받은 .srt / .vtt 자막은 시간 표시를 지우고 본문만 가져와요.</div>
+      </div>
+      <input id="newTitle" placeholder="제목" style="margin-bottom:8px">
+      <textarea id="newText" rows="6"></textarea>
+      <div class="row" style="margin-top:8px">
+        <button class="primary" id="addLesson">레슨 만들기</button>
+        <span class="muted">레슨과 단어는 이 기기에만 저장됩니다.</span>
+      </div>
+    </div>
+    <h3 style="margin:18px 0 10px">계속 공부하기</h3>
+    <div id="lessonList"></div>
+    <div class="card row">
+      <button id="lingqImport">⬇️ LingQ 기록 가져오기</button>
+      <button id="exportBtn">백업 내보내기</button>
+      <button id="importBtn" type="button">백업 불러오기</button>
+      <input type="file" id="importFile" accept=".json" class="hidden">
+    </div>
+  </section>
+
+  <!-- 리더 -->
+  <section id="v-reader" class="hidden">
+    <div class="row" style="margin-bottom:8px">
+      <button data-view="library">← 서재</button>
+      <b id="readerTitle" style="flex:1;min-width:120px"></b>
+      <button id="editLesson">✏️ 편집</button>
+      <button id="finishPage" class="primary" title="파란 단어를 모두 '아는 단어'로">✓ 다 읽었어요</button>
+    </div>
+    <div class="card row player" style="padding:10px 12px">
+      <button id="back5" title="5초 뒤로">⟲5</button>
+      <button id="pPrev" title="이전 문장">⏮</button>
+      <button id="pPlay" class="primary" style="min-width:72px">▶ 재생</button>
+      <button id="pNext" title="다음 문장">⏭</button>
+      <button id="fwd5" title="5초 앞으로">5⟳</button>
+      <button id="loopBtn" title="현재 문장 반복">🔁</button>
+      <select id="rateSel" title="속도">
+        <option value="0.6">0.6×</option><option value="0.75">0.75×</option><option value="0.9">0.9×</option>
+        <option value="1">1×</option><option value="1.15">1.15×</option><option value="1.3">1.3×</option>
+      </select>
+      <select id="voiceSel" title="목소리" style="max-width:180px"></select>
+      <button id="videoToggle"></button>
+      <button id="ccToggle" title="자막 켜기/끄기"></button>
+      <button id="viewToggle"></button>
+      <span class="muted" id="sentPos"></span>
+    </div>
+    <div class="video hidden" id="ytWrap"><div id="yt"></div></div>
+    <div class="reader">
+      <div>
+        <div class="card" id="text"></div>
+        <!-- 문장 보기 도구: 듣기·번역·이 문장의 저장 단어 -->
+        <div class="card hidden" id="sentExtra">
+          <div class="row">
+            <button id="sPrev">‹ 이전</button>
+            <button id="sSpeak">🔊 문장</button>
+            <button id="sSlow">🐢 천천히</button>
+            <button id="sTrans"></button>
+            <button id="sNext" style="margin-left:auto">다음 ›</button>
+          </div>
+          <div id="sTransText" class="hidden"></div>
+          <div id="sList" style="margin-top:8px"></div>
+        </div>
+        <div class="muted" id="phraseHint">💡 단어를 누르면 뜻이 나와요. 여러 단어는 마우스로 드래그(아이폰: 살짝 길게 누른 채 손가락으로 끌기)하면 그 구간의 해석이 나와요.</div>
+      </div>
+      <div class="card hidden" id="panel">
+        <div class="row" style="justify-content:space-between;flex-wrap:nowrap">
+          <span class="word" id="pWord"></span>
+          <span style="white-space:nowrap"><button id="pSpeak">🔊</button> <button id="pClose">✕</button></span>
+        </div>
+        <div class="ex" id="pEx"></div>
+        <div id="pTrans" class="hidden"></div>
+        <div class="row" style="margin:6px 0">
+          <button id="pSave" class="primary">💾 저장</button>
+          <button id="pSaveSent">📌 문장 통째로 저장</button>
+        </div>
+        <div class="row" style="margin:6px 0">
+          <button id="extL" title="앞 단어까지 구문으로">◀ +</button>
+          <button id="extR" title="뒤 단어까지 구문으로">+ ▶</button>
+          <button id="pSentSpeak">🔊 문장</button>
+          <button id="pSeek" class="hidden">🎬 이 장면</button>
+        </div>
+        <div class="chips row" id="pSuggest"></div>
+        <label class="muted">내 뜻 (입력하면 자동 저장)</label>
+        <textarea id="pMeaning" rows="2" placeholder="예: 끈질긴, 집요한"></textarea>
+        <div class="row status" style="margin:10px 0">
+          <button data-s="-1" title="무시 (고유명사 등)">🚫</button>
+          <button data-s="1">1</button><button data-s="2">2</button><button data-s="3">3</button><button data-s="4">4</button>
+          <button data-s="5" title="아는 단어">✓</button>
+        </div>
+        <div class="links" id="pLinks"></div>
+        <ol class="defs" id="pDefs"></ol>
+        <div class="muted">단축키: 1–4 레벨 · K 아는 단어 · X 무시 · Esc 닫기 · Space 재생 · ←/→ 문장 이동</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 레슨 편집 -->
+  <section id="v-edit" class="hidden">
+    <div class="card">
+      <b>✏️ 레슨 편집</b>
+      <input id="eTitle" placeholder="제목" style="margin:8px 0">
+      <div class="muted" id="eHint" style="margin-bottom:8px"></div>
+      <textarea id="eText" rows="20" style="font-family:ui-monospace,Menlo,monospace;font-size:15px;line-height:1.7"></textarea>
+      <div class="row" style="margin-top:8px">
+        <button class="primary" id="eSave">저장</button>
+        <button id="eCancel">취소</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 단어장 -->
+  <section id="v-vocab" class="hidden">
+    <div class="card">
+      <div class="row tabs" style="margin-bottom:10px">
+        <button data-vt="all" class="on">전체 <span class="muted" id="vcAll"></span></button>
+        <button data-vt="phrases">구문 <span class="muted" id="vcPh"></span></button>
+        <button data-vt="due">복습 예정 <span class="muted" id="vcDue"></span></button>
+      </div>
+      <div class="row">
+        <input id="vSearch" placeholder="검색" style="flex:1;min-width:140px">
+        <select id="vFilter" style="width:auto">
+          <option value="learning">학습 중 (1–4)</option>
+          <option value="known">아는 단어</option>
+          <option value="ignored">무시</option>
+          <option value="all">전체 상태</option>
+        </select>
+      </div>
+    </div>
+    <div class="card" id="vList"></div>
+  </section>
+
+  <!-- 복습 -->
+  <section id="v-review" class="hidden">
+    <div class="card flash" id="flash"></div>
+  </section>
+
+  <!-- 통계 -->
+  <section id="v-stats" class="hidden">
+    <div class="tiles" id="tiles"></div>
+    <div class="card" style="margin-top:12px">
+      <b>최근 7일</b>
+      <table style="margin-top:8px"><thead><tr><th>날짜</th><th>새로 안 단어</th><th>저장한 단어</th><th>복습</th></tr></thead><tbody id="weekBody"></tbody></table>
+    </div>
+  </section>
+</main>
+
+<script>
+// ---------- 저장소 ----------
+const store = {
+  load(k, d) { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } },
+  save(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { alert('저장 실패: ' + e.message); } },
+};
+let lessons = store.load('ml_lessons', []);
+let words = store.load('ml_words', {});   // { 단어 또는 "구문 키": {status, meaning, example, added, due, interval} }
+let log = store.load('ml_log', {});       // { 'YYYY-MM-DD': {known, lingqs, reviewed} }
+const settings = { rate: 0.9, voice: '', focus: true, cc: true, video: true, trans: false, ...store.load('ml_settings', {}) };
+// 저장할 때마다 클라우드 업로드 예약(로그인했을 때만). u = 마지막 수정 시각 → 기기 간 병합 기준
+const saveLessons = () => { if (current) current.u = Date.now(); store.save('ml_lessons', lessons); schedulePush(); };
+const saveWords = () => { store.save('ml_words', words); renderStat(); schedulePush(); };
+const touchWord = k => { if (words[k]) words[k].u = Date.now(); };
+const saveSettings = () => store.save('ml_settings', settings);
+
+const DAY = 86400000;
+const today = (t = Date.now()) => new Date(t).toLocaleDateString('sv'); // YYYY-MM-DD (현지 시간)
+function bump(field, n = 1) {
+  const d = (log[today()] ??= { known: 0, lingqs: 0, reviewed: 0 });
+  d[field] = (d[field] || 0) + n;
+  store.save('ml_log', log);
+  schedulePush();
+}
+
+// 상태: 0 새 단어(파랑) · 1~4 학습 중(노랑) · 5 아는 단어 · -1 무시
+const statusOf = k => words[k]?.status ?? 0;
+const cls = s => s === 0 ? 'sn' : s >= 1 && s <= 4 ? 's' + s : '';
+const WORD_RE = /[A-Za-z]+(?:['’][A-Za-z]+)*/g;
+const norm = w => w.toLowerCase().replace(/’/g, "'");
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const $ = id => document.getElementById(id);
+const isLearning = s => s >= 1 && s <= 4;
+const isPhrase = k => k.includes(' ');
+
+function setStatus(k, s) {
+  const prev = statusOf(k);
+  const w = words[k] || (words[k] = { status: 0, meaning: '', example: '', added: Date.now() });
+  w.status = s;
+  touchWord(k);
+  if (s === 5 && prev !== 5) bump('known');
+  if (isLearning(s) && !isLearning(prev) && prev !== 5) bump('lingqs');
+  if (isLearning(s) && w.due === undefined) w.due = Date.now();
+  saveWords();
+  document.querySelectorAll(`#text .w[data-k="${CSS.escape(k)}"]`).forEach(el => {
+    const keep = ['sel', 'ph'].filter(c => el.classList.contains(c));
+    el.className = ['w', cls(s), ...keep].filter(Boolean).join(' ');
+  });
+  if (isPhrase(k)) markPhrases();
+  if (k === selected) markStatusButtons(s);
+  renderSentExtra();
+}
+
+// ---------- 화면 전환 ----------
+function show(view) {
+  for (const v of ['library', 'reader', 'edit', 'vocab', 'review', 'stats']) $('v-' + v).classList.toggle('hidden', v !== view);
+  if (view !== 'reader') { stopPlay(); closePanel(); }
+  if (view === 'library') renderLibrary();
+  if (view === 'vocab') renderVocab();
+  if (view === 'review') startReview();
+  if (view === 'stats') renderStats();
+  window.scrollTo(0, 0);
+}
+document.querySelectorAll('[data-view]').forEach(b => b.onclick = () => show(b.dataset.view));
+
+const dueWords = () => Object.entries(words).filter(([, w]) => isLearning(w.status) && (w.due ?? 0) <= Date.now());
+function renderStat() {
+  const vals = Object.values(words);
+  $('stat').textContent = `아는 단어 ${vals.filter(w => w.status === 5).length.toLocaleString()} · 오늘 저장 ${log[today()]?.lingqs || 0}`;
+  const due = dueWords().length;
+  $('dueBadge').textContent = due;
+  $('dueBadge').classList.toggle('hidden', !due);
+}
+
+// ---------- 서재 ----------
+function lessonStats(l) {
+  const set = new Set((l.text.match(WORD_RE) || []).map(norm));
+  let unknown = 0, lingqs = 0;
+  set.forEach(k => { const s = statusOf(k); if (s === 0) unknown++; else if (isLearning(s)) lingqs++; });
+  return { total: set.size, unknown, lingqs };
+}
+function renderLibrary() {
+  const list = $('lessonList');
+  if (!lessons.length) { list.innerHTML = '<p class="muted">아직 레슨이 없어요. 위에 유튜브 주소나 영어 텍스트를 넣어 보세요.</p>'; return; }
+  const recent = lessons.slice().sort((a, b) => (b.opened || b.created) - (a.opened || a.created));
+  list.innerHTML = '<div class="grid">' + recent.map(l => {
+    const st = lessonStats(l);
+    const pct = st.total ? Math.round(st.unknown / st.total * 100) : 0;
+    const thumb = l.video ? `style="background-image:url('https://i.ytimg.com/vi/${l.video}/mqdefault.jpg')"` : '';
+    return `<div class="lcard" data-open="${l.id}">
+      <div class="thumb" ${thumb}>${l.video ? '' : esc((l.title.match(/[A-Za-z0-9가-힣]/) || ['📄'])[0].toUpperCase())}
+        <div class="counts"><span><i class="dot" style="background:#8fb8ff"></i>${st.unknown}</span><span><i class="dot" style="background:#ffd966"></i>${st.lingqs}</span></div></div>
+      <div class="newbar"><i style="width:${100 - pct}%"></i></div>
+      <div class="lbody"><b>${esc(l.title)}</b>
+        <div class="lfoot"><span class="muted"><i class="dot" style="background:var(--new)"></i>새 단어 ${pct}%</span>
+        <button class="ldel" data-del="${l.id}" title="삭제">삭제</button></div></div></div>`;
+  }).join('') + '</div>';
+}
+$('lessonList').onclick = e => {
+  const del = e.target.closest('[data-del]');
+  if (del) {
+    if (confirm('이 레슨을 삭제할까요? (저장한 단어는 유지됩니다)')) {
+      lessons = lessons.filter(l => l.id !== del.dataset.del);
+      deleted.push(del.dataset.del); store.save('ml_deleted', deleted); // 다른 기기에서도 지워지게
+      saveLessons(); renderLibrary();
+    }
+    return;
+  }
+  const open = e.target.closest('[data-open]');
+  if (open) openLesson(open.dataset.open);
+};
+$('addLesson').onclick = () => {
+  const text = $('newText').value.trim();
+  if (!text) return alert('텍스트를 넣어 주세요.');
+  const title = $('newTitle').value.trim() || text.slice(0, 40) + '…';
+  const l = { id: Date.now().toString(36), title, text, created: Date.now(), u: Date.now() };
+  if (activeSrc === 'youtube') {
+    l.video = youtubeId($('ytInput').value.trim());
+    if (!l.video) return alert('유튜브 영상 주소를 확인해 주세요.');
+    l.cues = parseTranscript(text);
+    if (!l.cues.length) return alert('스크립트에서 시간 표시(예: 0:01)를 찾지 못했어요. 유튜브 "스크립트 표시"에서 시간과 함께 복사해 주세요.');
+    l.text = l.cues.map(c => c.text).join(' ');
+    $('ytInput').value = '';
+    $('ytStatus').textContent = '주소를 넣으면 자막을 자동으로 가져와요. 가져온 자막은 아래 칸에서 고칠 수 있어요.';
+  }
+  lessons.push(l); saveLessons();
+  $('newText').value = ''; $('newTitle').value = '';
+  openLesson(l.id);
+};
+
+// ---------- 콘텐츠 가져오기 ----------
+let activeSrc = 'youtube';
+function setSource(src) {
+  activeSrc = src;
+  document.querySelectorAll('[data-src]').forEach(x => x.classList.toggle('on', x.dataset.src === src));
+  for (const s of ['url', 'file', 'youtube']) $('src-' + s).classList.toggle('hidden', src !== s);
+  $('newText').placeholder = src === 'youtube'
+    ? '자막이 자동으로 들어와요. (직접 넣을 때는 유튜브 "스크립트 표시"에서 시간 표시와 함께 복사)'
+    : '영어 기사, 대본, 책 내용을 여기에 붙여넣으세요';
+}
+document.querySelectorAll('[data-src]').forEach(b => b.onclick = () => setSource(b.dataset.src));
+setSource('youtube');
+
+function cleanMarkdown(s) {
+  return s.replace(/!\[[^\]]*\]\([^)]*\)/g, '')          // 이미지
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')              // 링크 → 글자만
+    .replace(/^#{1,6}\s*/gm, '')
+    .replace(/^\s*(?:[-*+]|\d+\.)\s+/gm, '')
+    .replace(/(\*\*|__|`|^>\s?)/gm, '')
+    .replace(/^\s*[=\-*_]{3,}\s*$/gm, '')
+    .replace(/\n{3,}/g, '\n\n').trim();
+}
+$('urlFetch').onclick = async () => {
+  const url = $('urlInput').value.trim();
+  if (!/^https?:\/\//.test(url)) return alert('http(s):// 로 시작하는 주소를 넣어 주세요.');
+  $('urlFetch').disabled = true; $('urlFetch').textContent = '불러오는 중…';
+  try {
+    const r = await fetch('https://r.jina.ai/' + url);
+    if (!r.ok) throw new Error(r.status);
+    const raw = await r.text();
+    $('newTitle').value = (raw.match(/^Title:\s*(.+)$/m) || [])[1] || '';
+    $('newText').value = cleanMarkdown(raw.split(/^Markdown Content:\s*$/m)[1] ?? raw);
+  } catch (e) {
+    alert('기사를 불러오지 못했어요. (' + e.message + ') 본문을 직접 복사해 붙여넣어 주세요.');
+  } finally {
+    $('urlFetch').disabled = false; $('urlFetch').textContent = '불러오기';
+  }
+};
+
+function parseSubtitles(t) {
+  const out = [];
+  for (let line of t.replace(/\r/g, '').split('\n')) {
+    line = line.replace(/<[^>]+>/g, '').replace(/\{[^}]+\}/g, '').trim();
+    if (!line || /^\d+$/.test(line) || line.includes('-->') || /^(WEBVTT|NOTE|Kind:|Language:)/.test(line)) continue;
+    if (out[out.length - 1] !== line) out.push(line);
+  }
+  const joined = out.join(' ').replace(/\s+/g, ' ');
+  const sents = joined.match(/[^.!?]+[.!?]*\s*/g) || [joined];
+  const paras = [];
+  for (let i = 0; i < sents.length; i += 5) paras.push(sents.slice(i, i + 5).join('').trim());
+  return paras.join('\n\n');
+}
+$('fileInput').onchange = async e => {
+  const f = e.target.files[0];
+  if (!f) return;
+  const t = await f.text();
+  $('newTitle').value = f.name.replace(/\.[^.]+$/, '');
+  const subs = /\.(srt|vtt)$/i.test(f.name);
+  // 유튜브 탭에서 넣은 자막 파일은 시간 정보를 유지해 영상과 맞춤
+  $('newText').value = subs ? (activeSrc === 'youtube' ? timedSubsToTranscript(t) : parseSubtitles(t)) : t;
+  e.target.value = '';
+};
+
+// ---------- 유튜브 ----------
+function youtubeId(url) {
+  const m = url.match(/(?:youtu\.be\/|[?&]v=|\/(?:embed|shorts|live)\/)([\w-]{11})/);
+  return m ? m[1] : null;
+}
+// 자막 서버: 집 Mac(server.mjs의 /api/transcript) → 구글 Apps Script 순서로 시도
+const TRANSCRIPT_API = ''; // Apps Script 웹 앱 URL (…/exec)
+async function fetchTranscriptApi(id) {
+  const urls = [];
+  if (!location.hostname.endsWith('github.io')) urls.push(`/api/transcript?v=${id}`);
+  if (TRANSCRIPT_API) urls.push(`${TRANSCRIPT_API}?v=${id}`);
+  let lastErr = '자막 서버가 아직 설정되지 않았어요';
+  for (const u of urls) {
+    try {
+      const j = await (await fetch(u)).json();
+      if (j.cues?.length) return j;
+      lastErr = j.error || lastErr;
+    } catch { lastErr = '자막 서버에 연결하지 못했어요'; }
+  }
+  throw new Error(lastErr);
+}
+// 주소를 넣으면 자막 자동 가져오기
+async function autoTranscript() {
+  const url = $('ytInput').value.trim(), id = youtubeId(url), status = $('ytStatus');
+  if (!id) { if (url) status.textContent = '유튜브 주소를 확인해 주세요.'; return; }
+  if (id === autoTranscript.busy) return; // 붙여넣기+변경 이벤트 중복 방지
+  autoTranscript.busy = id;
+  setTimeout(() => autoTranscript.busy = null, 1500);
+  status.textContent = '⏳ 자막 가져오는 중…';
+  try {
+    const j = await fetchTranscriptApi(id);
+    $('newTitle').value = j.title;
+    $('newText').value = j.cues.map(c => `${fmtTime(c.t)} ${c.text}`).join('\n');
+    status.textContent = `✅ 자막 ${j.cues.length}줄을 가져왔어요${j.auto ? ' (자동 생성 자막 — 틀린 부분은 아래에서 고치세요)' : ''}. '레슨 만들기'를 누르세요.`;
+  } catch (e) {
+    status.innerHTML = `⚠️ 자동으로 못 가져왔어요: ${esc(e.message)}<br>유튜브에서 <b>…더보기 → 스크립트 표시</b> → 전체 복사 → 아래 칸에 붙여넣어도 돼요.`;
+    try {
+      const r = await fetch(`https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`);
+      if (r.ok && !$('newTitle').value.trim()) $('newTitle').value = (await r.json()).title || '';
+    } catch { /* 제목은 직접 입력 */ }
+  }
+}
+$('ytInput').onchange = autoTranscript;
+$('ytInput').onpaste = () => setTimeout(autoTranscript, 0);
+
+const fmtTime = t => `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, '0')}`;
+// 유튜브 '스크립트 표시'에서 복사한 텍스트 → [{t: 초, text}]
+function parseTranscript(raw) {
+  const TS = /^(?:(\d+):)?(\d+):(\d{2})$/;
+  const sec = m => (+(m[1] || 0)) * 3600 + (+m[2]) * 60 + (+m[3]);
+  const cues = [];
+  let cur = null;
+  for (let line of raw.replace(/\r/g, '').split('\n')) {
+    line = line.trim();
+    if (!line || /^\d+\s*(?:초|분|시간|seconds?|minutes?|hours?)(?:[,\s]+\d+\s*(?:초|분|seconds?|minutes?))*$/i.test(line)) continue;
+    const same = line.match(/^((?:\d+:)?\d+:\d{2})\s+(.+)$/);
+    const ts = same ? same[1].match(TS) : line.match(TS);
+    if (ts) { cur = { t: sec(ts), text: same ? same[2] : '' }; cues.push(cur); continue; }
+    if (cur) cur.text += (cur.text ? ' ' : '') + line;
+  }
+  return cues.map(c => ({ t: c.t, text: c.text.replace(/\[[^\]]*\]/g, '').replace(/\s+/g, ' ').trim() })).filter(c => c.text);
+}
+// .srt / .vtt → '0:01 문장' 줄 형식 (parseTranscript가 읽을 수 있게)
+function timedSubsToTranscript(raw) {
+  const out = [];
+  let t = null;
+  for (let line of raw.replace(/\r/g, '').split('\n')) {
+    const m = line.match(/(?:(\d+):)?(\d{2}):(\d{2})[.,]\d+\s*-->/);
+    if (m) { t = (+(m[1] || 0)) * 3600 + (+m[2]) * 60 + (+m[3]); continue; }
+    line = line.replace(/<[^>]+>/g, '').trim();
+    if (t === null || !line || /^\d+$/.test(line)) continue;
+    if (out.length && out[out.length - 1].text === line) continue; // 자동 자막의 중복 줄 제거
+    out.push({ t, text: line });
+  }
+  return out.map(c => `${fmtTime(c.t)} ${c.text}`).join('\n');
+}
+
+let ytPlayer = null, ytReady = null, ytTimer = null;
+function loadYouTubeApi() {
+  return ytReady ??= new Promise(resolve => {
+    window.onYouTubeIframeAPIReady = resolve;
+    const s = document.createElement('script');
+    s.src = 'https://www.youtube.com/iframe_api';
+    document.head.appendChild(s);
+  });
+}
+async function mountVideo(id) {
+  await loadYouTubeApi();
+  if (ytPlayer?.cueVideoById) { ytPlayer.cueVideoById(id, segs[playIdx]?.t || 0); return; }
+  ytPlayer = new YT.Player('yt', {
+    videoId: id,
+    playerVars: { playsinline: 1, rel: 0, start: Math.floor(segs[playIdx]?.t || 0) },
+    events: {
+      onReady: () => ytPlayer.setPlaybackRate(settings.rate),
+      onStateChange: e => {
+        playing = e.data === YT.PlayerState.PLAYING;
+        clearInterval(ytTimer);
+        if (playing) ytTimer = setInterval(syncCaption, 250);
+        else if (current) saveLessons(); // 보던 위치 저장
+        updatePlayer();
+      },
+    },
+  });
+}
+// 영상 재생 위치에 맞는 자막 줄 강조 (🔁 반복 중이면 현재 줄로 되돌림)
+function syncCaption() {
+  if (!isVideo() || !ytPlayer?.getCurrentTime) return;
+  const t = ytPlayer.getCurrentTime() + 0.2;
+  let i = 0;
+  while (i + 1 < segs.length && segs[i + 1].t <= t) i++;
+  if (i === playIdx) return;
+  if (loop && playing) { ytPlayer.seekTo(segs[playIdx].t, true); return; }
+  playIdx = i;
+  current.pos = i;
+  updatePlayer();
+  if (!selected) scrollToCurrent();
+}
+// 자막 줄로 영상 이동. 멈춰 있던 영상은 계속 멈춰 있게 (유튜브는 seek하면 자동 재생됨)
+function seekCue(i, play = false) {
+  playIdx = Math.max(0, Math.min(sentences.length - 1, i));
+  if (current) current.pos = playIdx;
+  const wasPlaying = playing;
+  ytPlayer?.seekTo?.(segs[playIdx].t, true);
+  if (play) ytPlayer?.playVideo?.();
+  else if (!wasPlaying) ytPlayer?.pauseVideo?.();
+  updatePlayer();
+}
+const isVideo = () => !!current?.video;
+
+// ---------- 리더 ----------
+let current = null, selected = null, sentences = [], selSent = 0, selRange = [];
+function tokenize(s) {
+  let out = '', last = 0;
+  for (const m of s.matchAll(WORD_RE)) {
+    const k = norm(m[0]);
+    out += esc(s.slice(last, m.index)) + `<span class="w ${cls(statusOf(k))}" data-k="${esc(k)}">${esc(m[0])}</span>`;
+    last = m.index + m[0].length;
+  }
+  return out + esc(s.slice(last));
+}
+// ---------- 레슨 편집 ----------
+// 영상 레슨: 한 줄 = 한 문장 ("0:12 문장"). 시간이 없는 줄은 앞 줄 시간을 따라감.
+function openEditor() {
+  if (!current) return;
+  $('eTitle').value = current.title;
+  if (current.video) {
+    $('eText').value = segs.map(c => `${fmtTime(c.t)} ${c.text}`).join('\n');
+    $('eHint').innerHTML = '<b>한 줄 = 한 문장</b>이에요. 끊긴 문장은 줄바꿈을 지워서 합치고, 너무 긴 문장은 엔터로 나누세요.<br>'
+      + '앞의 시간(0:12)은 영상 위치예요. 새로 나눈 줄에 시간이 없으면 앞 줄의 시간을 따라가요.';
+  } else {
+    $('eText').value = current.text;
+    $('eHint').textContent = '본문을 고칠 수 있어요. 빈 줄로 문단을 나눠요.';
+  }
+  show('edit');
+}
+function parseEdited(raw) {
+  const exact = new Map(segs.map(c => [Math.floor(c.t), c.t])); // 원래 시간의 소수점 유지
+  const out = [];
+  let last = 0;
+  for (let line of raw.split('\n')) {
+    line = line.trim();
+    if (!line) continue;
+    const m = line.match(/^(?:(\d+):)?(\d+):(\d{2})\s+(.*)$/);
+    let t = last, text = line;
+    if (m) { const s = (+(m[1] || 0)) * 3600 + (+m[2]) * 60 + (+m[3]); t = exact.get(s) ?? s; text = m[4]; }
+    if (!text.trim()) continue;
+    t = Math.max(t, last); // 시간은 앞 줄보다 뒤여야 영상과 맞음
+    out.push({ t, text: text.trim(), timed: !!m });
+    last = t;
+  }
+  // 시간 없이 나눈 줄: 앞뒤 시간 사이를 단어 수 비율로 나눠 줌
+  for (let i = 0; i < out.length; i++) {
+    if (out[i].timed) continue;
+    let s = i - 1, e = i;
+    while (s >= 0 && !out[s].timed) s--;
+    while (e < out.length && !out[e].timed) e++;
+    if (s >= 0 && e < out.length) {
+      const wc = k => out[k].text.split(' ').length;
+      let total = 0, acc = 0;
+      for (let k = s; k < e; k++) total += wc(k);
+      for (let k = s; k < e; k++) { if (k > s) out[k].t = out[s].t + (out[e].t - out[s].t) * acc / total; acc += wc(k); }
+    }
+    i = e;
+  }
+  return out.map(({ t, text }) => ({ t, text }));
+}
+$('editLesson').onclick = openEditor;
+$('eCancel').onclick = () => openLesson(current.id);
+$('eSave').onclick = () => {
+  const raw = $('eText').value;
+  if (!raw.trim()) return alert('내용이 비어 있어요.');
+  if (current.video) {
+    current.cues = parseEdited(raw);
+    current.edited = true;
+    current.text = current.cues.map(c => c.text).join(' ');
+  } else {
+    current.text = raw.trim();
+  }
+  current.title = $('eTitle').value.trim() || current.title;
+  saveLessons();
+  openLesson(current.id);
+};
+
+// 유튜브 자막은 화면 표시용 짧은 줄로 끊겨 있음 → 마침표(. ? !)까지 이어 붙여 한 문장으로.
+// 문장 시작 시간 = 첫 줄의 시간. 구두점 없는 자동 자막은 30단어에서 끊음.
+let segs = [];
+function mergeCues(cues) {
+  const out = [];
+  let cur = null;
+  for (const c of cues) {
+    if (cur) cur.text += ' ' + c.text; else cur = { t: c.t, text: c.text };
+    if (/[.!?…]["”’)\]]*$/.test(c.text) || cur.text.split(' ').length >= 30) { out.push(cur); cur = null; }
+  }
+  if (cur) out.push(cur);
+  return out;
+}
+function openLesson(id) {
+  current = lessons.find(l => l.id === id);
+  if (!current) return;
+  current.opened = Date.now(); saveLessons();
+  show('reader');
+  $('readerTitle').textContent = current.title;
+  sentences = [];
+  const sentSpan = s => `<span class="sent" data-i="${sentences.push(s.trim()) - 1}">${tokenize(s)} </span>`;
+  if (current.video) {
+    // 자막 줄을 이어 붙여 진짜 문장 단위로, 3문장씩 문단으로
+    segs = current.edited ? current.cues : mergeCues(current.cues); // 편집한 레슨은 줄 = 문장 그대로
+    const paras = [];
+    for (let i = 0; i < segs.length; i += 3) paras.push('<p>' + segs.slice(i, i + 3).map(c => sentSpan(c.text)).join('') + '</p>');
+    $('text').innerHTML = paras.join('');
+  } else {
+    $('text').innerHTML = current.text.split(/\n+/).filter(p => p.trim()).map(p => {
+      const parts = p.match(/[^.!?]+(?:[.!?]+["”’)\]]*)?\s*|[.!?]+\s*/g) || [p];
+      return '<p>' + parts.map(sentSpan).join('') + '</p>';
+    }).join('');
+  }
+  playIdx = current.pos && current.pos < sentences.length ? current.pos : 0;
+  settings.video = false; // 스크립트 먼저 공부 — 영상은 ▶ 재생이나 📺 버튼을 누를 때 나타남
+  markPhrases();
+  if (current.video) mountVideo(current.video);
+  closePanel();
+  updatePlayer();
+}
+
+// 저장한 구문(학습 중)을 첫 단어 기준으로 묶어 둠
+function phraseIndex() {
+  const by = {};
+  for (const [k, w] of Object.entries(words)) if (isPhrase(k) && isLearning(w.status)) {
+    const parts = k.split(' ');
+    (by[parts[0]] ??= []).push(parts);
+  }
+  return by;
+}
+// 본문에서 저장한 구문에 점선 밑줄
+function markPhrases() {
+  const by = phraseIndex();
+  document.querySelectorAll('#text .w.ph').forEach(el => el.classList.remove('ph'));
+  document.querySelectorAll('#text .sent').forEach(sent => {
+    const ws = [...sent.querySelectorAll('.w')], keys = ws.map(el => el.dataset.k);
+    keys.forEach((k, i) => {
+      for (const parts of by[k] || []) if (parts.every((p, j) => keys[i + j] === p))
+        for (let j = 0; j < parts.length; j++) ws[i + j].classList.add('ph');
+    });
+  });
+}
+// 한 문장 안의 저장 단어·구문 (문장 보기 목록용)
+function lingqsIn(sent) {
+  const by = phraseIndex(), keys = [...sent.querySelectorAll('.w')].map(el => el.dataset.k), out = [];
+  keys.forEach((k, i) => {
+    if (isLearning(statusOf(k)) && !out.includes(k)) out.push(k);
+    for (const parts of by[k] || []) {
+      const pk = parts.join(' ');
+      if (!out.includes(pk) && parts.every((p, j) => keys[i + j] === p)) out.push(pk);
+    }
+  });
+  return out;
+}
+
+function selectEls(els) {
+  document.querySelectorAll('#text .sel').forEach(x => x.classList.remove('sel'));
+  els.forEach(x => x.classList.add('sel'));
+  selRange = els;
+}
+// 단어 하나 → 단어 창 / 여러 단어 → 구간(구문) 창
+function openWords(ws) {
+  const sent = ws[0].closest('.sent');
+  selSent = +sent.dataset.i;
+  if (!playing && selSent !== playIdx) { playIdx = selSent; updatePlayer(); }
+  selectEls(ws);
+  openPanel(ws.map(el => el.dataset.k).join(' '), sent.textContent.trim());
+}
+const openPhrase = openWords;
+
+// 드래그로 구간 선택 (LingQ 방식)
+// 마우스: 누른 채 끌기 / 터치: 살짝 길게(0.25초) 누른 뒤 끌기 — 그냥 쓸어 넘기면 스크롤
+let drag = null;
+function paintDrag(range) {
+  document.querySelectorAll('#text .drag').forEach(x => x.classList.remove('drag'));
+  range.forEach(x => x.classList.add('drag'));
+}
+function cancelDrag() {
+  if (!drag) return;
+  clearTimeout(drag.timer);
+  paintDrag([]);
+  drag = null;
+}
+$('text').addEventListener('pointerdown', e => {
+  const w = e.target.closest('.w');
+  if (!w || e.button > 0) return;
+  drag = { start: w, range: [w], active: e.pointerType === 'mouse', x: e.clientX, y: e.clientY };
+  if (!drag.active) drag.timer = setTimeout(() => {
+    if (!drag) return;
+    drag.active = true;
+    paintDrag(drag.range);
+    navigator.vibrate?.(10);
+  }, 250);
+});
+document.addEventListener('pointermove', e => {
+  if (!drag) return;
+  if (!drag.active) { if (Math.hypot(e.clientX - drag.x, e.clientY - drag.y) > 8) cancelDrag(); return; }
+  const el = document.elementFromPoint(e.clientX, e.clientY)?.closest?.('#text .w');
+  const sent = drag.start.closest('.sent');
+  if (!el || el.closest('.sent') !== sent) return; // 한 문장 안에서만
+  const all = [...sent.querySelectorAll('.w')], a = all.indexOf(drag.start), b = all.indexOf(el);
+  drag.range = all.slice(Math.min(a, b), Math.max(a, b) + 1);
+  paintDrag(drag.range);
+});
+document.addEventListener('pointerup', () => {
+  if (!drag) return;
+  const range = drag.range;
+  cancelDrag();
+  openWords(range);
+});
+document.addEventListener('pointercancel', cancelDrag);
+// 드래그 중에는 화면이 스크롤되지 않게
+document.addEventListener('touchmove', e => { if (drag?.active) e.preventDefault(); }, { passive: false });
+// 패널의 ◀+ / +▶ : 앞/뒤 단어를 붙여 구문으로 확장
+function extend(dir) {
+  if (!selRange.length) return;
+  const sent = selRange[0].closest('.sent'), all = [...sent.querySelectorAll('.w')];
+  const a = all.indexOf(selRange[0]), b = all.indexOf(selRange[selRange.length - 1]);
+  const n = dir < 0 ? all[a - 1] : all[b + 1];
+  if (n) openPhrase(dir < 0 ? [n, ...selRange] : [...selRange, n]);
+}
+$('extL').onclick = () => extend(-1);
+$('extR').onclick = () => extend(1);
+
+function markStatusButtons(s) {
+  document.querySelectorAll('#panel .status button').forEach(b => b.classList.toggle('on', +b.dataset.s === s));
+}
+function openPanel(k, example) {
+  selected = k;
+  const w = words[k];
+  $('panel').classList.remove('hidden');
+  document.body.classList.add('panel-open');
+  $('pWord').textContent = k;
+  $('pEx').textContent = w?.example || example;
+  $('pMeaning').value = w?.meaning || '';
+  $('pMeaning').dataset.example = example;
+  $('pTrans').classList.add('hidden');
+  $('pSave').textContent = statusOf(k) === 0 ? '💾 저장' : '💾 다시 저장';
+  markStatusButtons(statusOf(k));
+  $('pSeek').classList.toggle('hidden', !isVideo());
+  $('extL').classList.toggle('hidden', !selRange.length);
+  $('extR').classList.toggle('hidden', !selRange.length);
+  const q = encodeURIComponent(k);
+  $('pLinks').innerHTML =
+    `<a href="https://en.dict.naver.com/#/search?query=${q}" target="_blank">네이버 사전</a>` +
+    `<a href="https://papago.naver.com/?sk=en&tk=ko&st=${q}" target="_blank">파파고</a>` +
+    `<a href="https://youglish.com/pronounce/${q}/english" target="_blank">YouGlish</a>`;
+  if (isPhrase(k)) $('pDefs').innerHTML = ''; else loadDefinitions(k);
+  loadSuggestions(k);
+  if (!playing) speak(k);
+  revealAbovePanel(selRange[0] || document.querySelector(`#text .sent[data-i="${selSent}"]`));
+}
+// 아이폰: 아래에서 올라오는 단어 창에 문장이 가리지 않게, 영상 바로 아래로 스크롤
+function revealAbovePanel(el) {
+  if (innerWidth > 800 || !el) return;
+  const vid = $('ytWrap'), header = document.querySelector('header');
+  const top = header.offsetHeight + (vid.classList.contains('hidden') ? 0 : vid.offsetHeight) + 12;
+  window.scrollBy({ top: el.getBoundingClientRect().top - top, behavior: 'smooth' });
+}
+function closePanel() {
+  selected = null;
+  $('panel').classList.add('hidden');
+  document.body.classList.remove('panel-open');
+  selectEls([]);
+}
+$('pClose').onclick = closePanel;
+$('pSpeak').onclick = () => selected && speak(selected);
+$('pSentSpeak').onclick = () => {
+  if (isVideo() && playing) ytPlayer.pauseVideo();
+  speak(sentences[selSent] || '');
+};
+$('pSeek').onclick = () => seekCue(selSent, true);
+
+function setMeaning(text) {
+  const k = selected;
+  if (!k) return;
+  if (!words[k]) words[k] = { status: 0, meaning: '', example: '', added: Date.now() };
+  words[k].meaning = text;
+  touchWord(k);
+  if (!words[k].example) words[k].example = $('pMeaning').dataset.example || '';
+  if (statusOf(k) === 0 && text.trim()) setStatus(k, 1); // 뜻을 적으면 학습 시작(1단계)
+  else { saveWords(); renderSentExtra(); }
+}
+$('pMeaning').oninput = () => setMeaning($('pMeaning').value);
+document.querySelectorAll('#panel .status button').forEach(b => b.onclick = () => {
+  if (!selected) return;
+  setStatus(selected, +b.dataset.s);
+  if (!words[selected].example) { words[selected].example = $('pMeaning').dataset.example; saveWords(); }
+});
+
+// 한국어 뜻 추천 (MyMemory 무료 번역)
+const sugCache = {}, mainTrans = {};
+async function translate(text) {
+  const r = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text.slice(0, 450))}&langpair=en|ko`);
+  return r.json();
+}
+// 번역 결과: mainTrans[k] = 대표 해석, sugCache[k] = 추천 뜻 목록(Promise, 중복 요청 방지)
+function fetchSuggestions(k) {
+  return sugCache[k] ??= translate(k).then(j => {
+    mainTrans[k] = j.responseData?.translatedText || '';
+    const all = [j.responseData?.translatedText, ...(j.matches || []).map(m => m.translation)];
+    return [...new Set(all.filter(t => t && /[가-힣]/.test(t) && t.length <= 40).map(t => t.trim()))].slice(0, 4);
+  }).catch(() => { delete sugCache[k]; return []; });
+}
+async function loadSuggestions(k) {
+  const box = $('pSuggest');
+  box.innerHTML = '<span class="muted">추천 뜻 찾는 중…</span>';
+  if (isPhrase(k)) { $('pTrans').textContent = '해석 중…'; $('pTrans').classList.remove('hidden'); }
+  const list = await fetchSuggestions(k);
+  if (selected !== k) return;
+  box.innerHTML = list.map(t => `<button>${esc(t)}</button>`).join('');
+  // 드래그한 구간은 해석을 크게 바로 보여줌
+  if (isPhrase(k)) $('pTrans').textContent = mainTrans[k] ? `해석: ${mainTrans[k]}` : '해석을 불러오지 못했어요';
+}
+// 💾 저장: 뜻을 안 적었으면 해석을 뜻으로, 문장도 함께 저장
+function saveSelected() {
+  const k = selected;
+  if (!k) return;
+  let m = $('pMeaning').value.trim();
+  if (!m) { m = mainTrans[k] || ''; $('pMeaning').value = m; }
+  setMeaning(m);
+  if (!isLearning(statusOf(k))) setStatus(k, 1);
+  words[k].example = $('pMeaning').dataset.example || words[k].example;
+  touchWord(k);
+  saveWords();
+  $('pSave').textContent = '✅ 저장됨';
+  setTimeout(() => $('pSave').textContent = '💾 저장', 1500);
+}
+$('pSave').onclick = saveSelected;
+// 📌 문장 통째로 저장: 지금 문장 전체를 하나의 카드로
+$('pSaveSent').onclick = async () => {
+  const sent = document.querySelector(`#text .sent[data-i="${selSent}"]`);
+  const ws = sent ? [...sent.querySelectorAll('.w')] : [];
+  if (ws.length < 2) return;
+  openWords(ws);
+  const k = selected;
+  await fetchSuggestions(k);
+  if (selected === k) saveSelected();
+};
+$('pSuggest').onclick = e => {
+  const b = e.target.closest('button');
+  if (!b) return;
+  const cur = $('pMeaning').value.trim();
+  $('pMeaning').value = cur ? `${cur}, ${b.textContent}` : b.textContent;
+  setMeaning($('pMeaning').value);
+};
+
+const defCache = {};
+async function loadDefinitions(k) {
+  const box = $('pDefs');
+  box.innerHTML = '<li class="muted">영영 사전 불러오는 중…</li>';
+  try {
+    if (!defCache[k]) {
+      const r = await fetch('https://api.dictionaryapi.dev/api/v2/entries/en/' + encodeURIComponent(k));
+      defCache[k] = r.ok ? await r.json() : [];
+    }
+    if (selected !== k) return;
+    const items = [];
+    for (const entry of defCache[k]) for (const m of entry.meanings || [])
+      for (const d of (m.definitions || []).slice(0, 2)) items.push(`<li><i>${esc(m.partOfSpeech)}</i> ${esc(d.definition)}</li>`);
+    box.innerHTML = items.slice(0, 6).join('') || '<li class="muted">영영 정의 없음 — 위 링크를 이용하세요</li>';
+  } catch {
+    if (selected === k) box.innerHTML = '<li class="muted">사전을 불러오지 못했어요 (오프라인?)</li>';
+  }
+}
+
+$('finishPage').onclick = () => {
+  const ks = new Set([...document.querySelectorAll('#text .w.sn')].map(el => el.dataset.k));
+  if (!ks.size) return alert('남은 새 단어가 없어요!');
+  if (!confirm(`파란 단어 ${ks.size}개를 '아는 단어'로 표시할까요?`)) return;
+  ks.forEach(k => setStatus(k, 5));
+};
+
+// ---------- 문장 보기 (LingQ Sentence View) ----------
+const transCache = {};
+function renderSentExtra() {
+  const on = settings.focus && settings.cc && sentences.length && !$('v-reader').classList.contains('hidden');
+  $('sentExtra').classList.toggle('hidden', !on);
+  if (!on) return;
+  const sent = document.querySelector(`#text .sent[data-i="${playIdx}"]`);
+  if (!sent) return;
+  const items = lingqsIn(sent);
+  $('sList').innerHTML = items.length ? items.map(k => {
+    const w = words[k];
+    return `<div class="lq" data-k="${esc(k)}"><span class="lv">${w.status}</span>
+      <div style="flex:1;min-width:0"><b>${esc(k)}</b><div class="muted">${esc(w.meaning || '(뜻 없음)')}</div></div>
+      <button data-say="${esc(k)}">🔊</button></div>`;
+  }).join('') : '<div class="muted">이 문장에 저장한 단어가 없어요. 단어를 누르거나 여러 단어를 드래그해 저장하세요.</div>';
+  $('sTrans').textContent = settings.trans ? '번역 숨기기' : '번역 보기';
+  const box = $('sTransText'), text = sentences[playIdx];
+  box.classList.toggle('hidden', !settings.trans);
+  if (!settings.trans) return;
+  if (transCache[text]) { box.textContent = transCache[text]; return; }
+  box.textContent = '번역 중…';
+  translate(text)
+    .then(j => { transCache[text] = j.responseData?.translatedText || '(번역 없음)'; })
+    .catch(() => { transCache[text] = '번역을 불러오지 못했어요'; })
+    .then(() => { if (sentences[playIdx] === text) box.textContent = transCache[text]; });
+}
+$('sList').onclick = e => {
+  const say = e.target.closest('[data-say]');
+  if (say) { speak(say.dataset.say); return; }
+  const item = e.target.closest('.lq');
+  if (!item) return;
+  selSent = playIdx;
+  selectEls([]);
+  openPanel(item.dataset.k, sentences[playIdx]);
+};
+$('sSpeak').onclick = () => { if (isVideo() && playing) ytPlayer.pauseVideo(); speak(sentences[playIdx]); };
+$('sSlow').onclick = () => { if (isVideo() && playing) ytPlayer.pauseVideo(); speak(sentences[playIdx], null, 0.6); };
+$('sTrans').onclick = () => { settings.trans = !settings.trans; saveSettings(); renderSentExtra(); };
+$('sPrev').onclick = () => gotoSent(playIdx - 1);
+$('sNext').onclick = () => gotoSent(playIdx + 1);
+
+// ---------- 오디오 (영상 레슨: 유튜브 / 텍스트 레슨: 브라우저 TTS) ----------
+let playIdx = 0, playing = false, loop = false;
+const enVoices = () => speechSynthesis.getVoices().filter(v => v.lang.startsWith('en'));
+function loadVoices() {
+  $('voiceSel').innerHTML = enVoices().map(v => `<option value="${esc(v.name)}" ${v.name === settings.voice ? 'selected' : ''}>${esc(v.name)} (${esc(v.lang)})</option>`).join('');
+}
+speechSynthesis.onvoiceschanged = loadVoices;
+loadVoices();
+$('voiceSel').onchange = () => { settings.voice = $('voiceSel').value; saveSettings(); };
+$('rateSel').value = String(settings.rate);
+$('rateSel').onchange = () => {
+  settings.rate = +$('rateSel').value; saveSettings();
+  if (isVideo()) ytPlayer?.setPlaybackRate?.(settings.rate);
+};
+
+function speak(text, onend, rate) {
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  const v = enVoices().find(v => v.name === settings.voice) || enVoices().find(v => v.lang === 'en-US');
+  if (v) u.voice = v;
+  u.lang = v?.lang || 'en-US';
+  u.rate = rate ?? settings.rate;
+  if (onend) u.onend = onend;
+  speechSynthesis.speak(u);
+}
+function updatePlayer() {
+  const v = isVideo();
+  $('pPlay').textContent = playing ? '⏸ 정지' : v ? '▶ 재생' : '▶ 듣기';
+  const time = v && segs[playIdx] ? ` · ${fmtTime(segs[playIdx].t)}` : '';
+  $('sentPos').textContent = sentences.length ? `${playIdx + 1} / ${sentences.length}${time}` : '';
+  // 켜진 기능은 파란 테두리(on)로 표시
+  $('viewToggle').textContent = settings.focus ? '🎯 문장' : '📄 전체';
+  $('viewToggle').title = settings.focus ? '문장 보기 중 — 누르면 전체 보기' : '전체 보기 중 — 누르면 문장 보기';
+  $('viewToggle').classList.toggle('hidden', !settings.cc);
+  $('ccToggle').textContent = settings.cc ? '💬 자막 ON' : '💬 자막 OFF';
+  $('ccToggle').classList.toggle('on', settings.cc);
+  $('loopBtn').classList.toggle('on', loop);
+  for (const id of ['back5', 'fwd5', 'videoToggle']) $(id).classList.toggle('hidden', !v);
+  $('videoToggle').textContent = settings.video ? '📺 영상 ON' : '📺 영상 OFF';
+  $('videoToggle').classList.toggle('on', settings.video);
+  $('ytWrap').classList.toggle('hidden', !v || !settings.video);
+  $('ytWrap').style.top = document.querySelector('header').offsetHeight + 'px'; // 메뉴 바로 아래에 고정
+  $('voiceSel').classList.toggle('hidden', v);
+  $('text').classList.toggle('hidden', !settings.cc);
+  $('text').classList.toggle('focus', settings.focus);
+  $('phraseHint').classList.toggle('hidden', !settings.cc);
+  document.querySelectorAll('#text .sent.playing, #text .sent.cur').forEach(x => x.classList.remove('playing', 'cur'));
+  const el = document.querySelector(`#text .sent[data-i="${playIdx}"]`);
+  if (el) {
+    el.classList.add('cur');
+    if (playing || !selected) el.classList.add('playing');
+  }
+  renderSentExtra();
+}
+// 전체 보기에서만 현재 문장으로 스크롤 (문장 보기는 항상 화면에 있음)
+function scrollToCurrent() {
+  if (!settings.focus) document.querySelector(`#text .sent[data-i="${playIdx}"]`)?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+}
+function playFrom(i) {
+  if (i >= sentences.length) { stopPlay(); playIdx = 0; updatePlayer(); return; }
+  playIdx = Math.max(0, i); playing = true;
+  if (current) { current.pos = playIdx; saveLessons(); }
+  updatePlayer();
+  scrollToCurrent();
+  speak(sentences[playIdx], () => { if (playing && playIdx === i) playFrom(loop ? i : i + 1); });
+}
+function stopPlay() {
+  if (isVideo()) ytPlayer?.pauseVideo?.();
+  playing = false; speechSynthesis.cancel(); updatePlayer();
+}
+function gotoSent(i) {
+  i = Math.max(0, Math.min(sentences.length - 1, i));
+  closePanel();
+  if (isVideo()) seekCue(i);
+  else if (playing) playFrom(i);
+  else { playIdx = i; updatePlayer(); scrollToCurrent(); }
+}
+$('pPlay').onclick = () => {
+  if (isVideo()) {
+    if (playing) ytPlayer?.pauseVideo?.();
+    else {
+      speechSynthesis.cancel();
+      if (!settings.video) { settings.video = true; updatePlayer(); }
+      ytPlayer?.playVideo?.();
+    }
+    return;
+  }
+  playing ? stopPlay() : playFrom(playIdx);
+};
+$('pPrev').onclick = () => gotoSent(playIdx - 1);
+$('pNext').onclick = () => gotoSent(playIdx + 1);
+$('back5').onclick = () => ytPlayer?.seekTo?.(Math.max(0, ytPlayer.getCurrentTime() - 5), true);
+$('fwd5').onclick = () => ytPlayer?.seekTo?.(ytPlayer.getCurrentTime() + 5, true);
+$('loopBtn').onclick = () => { loop = !loop; updatePlayer(); };
+$('videoToggle').onclick = () => { settings.video = !settings.video; saveSettings(); updatePlayer(); };
+$('ccToggle').onclick = () => {
+  settings.cc = !settings.cc; saveSettings();
+  if (!settings.cc) closePanel();
+  updatePlayer(); scrollToCurrent();
+};
+$('viewToggle').onclick = () => {
+  settings.focus = !settings.focus; saveSettings();
+  updatePlayer(); scrollToCurrent();
+};
+
+// ---------- 키보드 단축키 ----------
+document.addEventListener('keydown', e => {
+  if (e.target.matches('input,textarea,select')) { if (e.key === 'Escape') e.target.blur(); return; }
+  if ($('v-reader').classList.contains('hidden')) return;
+  if (e.key === ' ') { e.preventDefault(); $('pPlay').click(); return; }
+  if (e.key === 'ArrowLeft') { gotoSent(playIdx - 1); return; }
+  if (e.key === 'ArrowRight') { gotoSent(playIdx + 1); return; }
+  if (!selected) return;
+  const map = { '1': 1, '2': 2, '3': 3, '4': 4, k: 5, K: 5, x: -1, X: -1 };
+  if (e.key in map) setStatus(selected, map[e.key]);
+  if (e.key === 'Escape') closePanel();
+});
+
+// ---------- 단어장 ----------
+let vTab = 'all';
+document.querySelectorAll('[data-vt]').forEach(b => b.onclick = () => {
+  vTab = b.dataset.vt;
+  document.querySelectorAll('[data-vt]').forEach(x => x.classList.toggle('on', x === b));
+  renderVocab();
+});
+function renderVocab() {
+  const q = $('vSearch').value.trim().toLowerCase(), f = $('vFilter').value;
+  const test = { learning: isLearning, known: s => s === 5, ignored: s => s === -1, all: () => true }[f];
+  const entries = Object.entries(words);
+  const due = new Set(dueWords().map(([k]) => k));
+  $('vcAll').textContent = entries.filter(([, w]) => isLearning(w.status)).length;
+  $('vcPh').textContent = entries.filter(([k, w]) => isPhrase(k) && isLearning(w.status)).length;
+  $('vcDue').textContent = due.size;
+  const rows = entries
+    .filter(([k, w]) => (vTab === 'phrases' ? isPhrase(k) : vTab === 'due' ? due.has(k) : true) && test(w.status)
+      && (!q || k.includes(q) || (w.meaning || '').toLowerCase().includes(q)))
+    .sort((a, b) => b[1].added - a[1].added).slice(0, 300);
+  const btns = (k, s) => [[-1, '🚫'], [1, '1'], [2, '2'], [3, '3'], [4, '4'], [5, '✓']]
+    .map(([v, t]) => `<button data-s="${v}" class="${v === s ? 'on' : ''}">${t}</button>`).join('');
+  $('vList').innerHTML = rows.map(([k, w]) => `<div class="vrow" data-k="${esc(k)}">
+      <div><b>${esc(k)}</b> <button class="ldel" data-say="${esc(k)}">🔊</button><div class="ex">${esc(w.example || '')}</div></div>
+      <div>${esc(w.meaning || '')}</div>
+      <div class="row status">${btns(k, w.status)}</div></div>`).join('')
+    || '<div class="muted">단어가 없어요</div>';
+}
+$('vSearch').oninput = renderVocab;
+$('vFilter').onchange = renderVocab;
+$('vList').onclick = e => {
+  const say = e.target.closest('[data-say]');
+  if (say) return speak(say.dataset.say);
+  const b = e.target.closest('[data-s]'), row = e.target.closest('[data-k]');
+  if (b && row) { setStatus(row.dataset.k, +b.dataset.s); renderVocab(); }
+};
+
+// ---------- 복습 (간격 반복) ----------
+// 알았어요 → 다음 복습까지 1일, 3일, 8일, 20일…로 늘어남 / 몰랐어요 → 10분 뒤 다시
+let queue = [], qi = 0;
+function startReview() {
+  queue = dueWords().sort(() => Math.random() - 0.5).slice(0, 30).map(([k]) => k);
+  qi = 0; renderCard(false);
+}
+function nextDueText() {
+  const next = Object.values(words).filter(w => isLearning(w.status) && w.due > Date.now()).map(w => w.due).sort((a, b) => a - b)[0];
+  if (!next) return '';
+  const h = Math.round((next - Date.now()) / 3600000);
+  return `다음 복습: ${h < 1 ? '1시간 안에' : h < 24 ? `${h}시간 뒤` : `${Math.round(h / 24)}일 뒤`}`;
+}
+function renderCard(revealed) {
+  const box = $('flash');
+  if (!queue.length) {
+    box.innerHTML = `<p>지금 복습할 단어가 없어요 👍</p><p class="muted">${nextDueText() || '레슨에서 단어에 뜻을 적으면 복습 카드가 생겨요.'}</p>`;
+    return;
+  }
+  if (qi >= queue.length) {
+    box.innerHTML = `<p>🎉 복습 완료!</p><p class="muted">${nextDueText()}</p><button class="primary" onclick="startReview()">남은 복습 확인</button>`;
+    return;
+  }
+  const k = queue[qi], w = words[k];
+  const ex = esc(w.example || '').replace(new RegExp(`\\b(${esc(k).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})\\b`, 'i'), '<b>$1</b>');
+  box.innerHTML = `<div class="muted">${qi + 1} / ${queue.length} · 레벨 ${w.status}</div>
+    <div class="word ${k.length > 30 ? 'long' : ''}">${esc(k)} <button id="cardSpeak">🔊</button></div>
+    <div class="ex" style="margin-top:8px">${ex}</div>
+    ${revealed ? `<div class="meaning">${esc(w.meaning || '(뜻 없음)')}</div>
+      <div class="row" style="justify-content:center;margin-top:16px">
+        <button onclick="grade(false)">😵 몰랐어요</button><button class="primary" onclick="grade(true)">😀 알았어요</button></div>`
+    : `<div style="margin-top:16px"><button class="primary" onclick="renderCard(true)">뜻 보기</button></div>`}`;
+  $('cardSpeak').onclick = () => speak(k);
+}
+function grade(ok) {
+  const k = queue[qi], w = words[k];
+  if (ok) {
+    w.interval = w.interval ? Math.round(w.interval * 2.5) : 1;
+    w.due = Date.now() + w.interval * DAY;
+    w.status = Math.min(5, w.status + 1);
+    if (w.status === 5) bump('known');
+  } else {
+    w.interval = 0;
+    w.due = Date.now() + 10 * 60 * 1000;
+    w.status = Math.max(1, w.status - 1);
+    if (!queue.slice(qi + 1).includes(k)) queue.push(k); // 이번 세션 끝에 한 번 더
+  }
+  touchWord(k);
+  bump('reviewed');
+  saveWords(); qi++; renderCard(false);
+}
+
+// ---------- 통계 ----------
+function streak() {
+  let n = 0, t = Date.now();
+  if (!log[today(t)]) t -= DAY; // 오늘 아직 안 했으면 어제부터 셈
+  while (log[today(t)]) { n++; t -= DAY; }
+  return n;
+}
+function renderStats() {
+  const vals = Object.values(words);
+  const d = log[today()] || {};
+  const tile = (n, label) => `<div class="tile"><b>${n}</b><span class="muted">${label}</span></div>`;
+  $('tiles').innerHTML =
+    tile(vals.filter(w => w.status === 5).length.toLocaleString(), '아는 단어') +
+    tile(vals.filter(w => isLearning(w.status)).length.toLocaleString(), '학습 중인 단어·구문') +
+    tile(d.known || 0, '오늘 새로 안 단어') +
+    tile(d.lingqs || 0, '오늘 저장한 단어') +
+    tile(d.reviewed || 0, '오늘 복습') +
+    tile(`${streak()}일`, '연속 학습');
+  const rows = [];
+  for (let i = 0; i < 7; i++) {
+    const key = today(Date.now() - i * DAY), x = log[key] || {};
+    rows.push(`<tr><td>${i === 0 ? '오늘' : key.slice(5)}</td><td>${x.known || 0}</td><td>${x.lingqs || 0}</td><td>${x.reviewed || 0}</td></tr>`);
+  }
+  $('weekBody').innerHTML = rows.join('');
+}
+
+// ---------- 백업 ----------
+$('exportBtn').onclick = () => {
+  const blob = new Blob([JSON.stringify({ lessons, words, log }, null, 1)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `my-lingq-backup-${today()}.json`;
+  a.click();
+};
+$('importBtn').onclick = () => $('importFile').click();
+$('importFile').onchange = async e => {
+  try {
+    const data = JSON.parse(await e.target.files[0].text());
+    if (!confirm('현재 데이터를 백업 파일로 덮어쓸까요?')) return;
+    lessons = data.lessons || []; words = data.words || {}; log = data.log || {};
+    saveLessons(); saveWords(); store.save('ml_log', log); renderLibrary();
+  } catch { alert('백업 파일을 읽지 못했어요.'); }
+  e.target.value = '';
+};
+
+// ---------- LingQ 기록 가져오기 (data/lingq-import.json) ----------
+// LingQ 단계 0~3 → 1~4, extended_status 3(아는 단어) → 5. My LingQ에서 직접 저장한 단어는 덮어쓰지 않음.
+$('lingqImport').onclick = async () => {
+  let data;
+  try {
+    const r = await fetch('data/lingq-import.json', { cache: 'no-store' });
+    if (!r.ok) throw new Error(r.status);
+    data = await r.json();
+  } catch {
+    return alert('LingQ 데이터 파일은 집 Mac에만 있어요.\nMac에서 http://localhost:8000 을 열어 구글 로그인 → 이 버튼을 한 번 누르면, 다른 기기는 로그인만 하면 자동으로 받아져요.');
+  }
+  if (!confirm(`LingQ 기록을 가져올까요?\n\n저장한 단어·구문 ${data.cards.length.toLocaleString()}개\n아는 단어 ${data.known.length.toLocaleString()}개\n\n(My LingQ에서 직접 저장한 단어는 그대로 둡니다)`)) return;
+  const keyOf = t => (t.match(WORD_RE) || []).map(norm).join(' ');
+  const mine = k => words[k] && !words[k].from; // 앱에서 직접 저장한 단어
+  let known = 0, cards = 0;
+  for (const w of data.known) {
+    const k = keyOf(w);
+    if (!k || mine(k)) continue;
+    words[k] = { status: 5, meaning: '', example: '', added: 0, from: 'lingq' };
+    known++;
+  }
+  for (const c of data.cards) {
+    const k = keyOf(c.term);
+    if (!k || mine(k)) continue;
+    const due = c.due ? Date.parse(c.due + 'Z') : Date.now();
+    words[k] = {
+      status: c.ext === 3 ? 5 : Math.min(4, c.status + 1),
+      meaning: c.hints.join('; '), example: c.fragment || '',
+      added: Date.parse((c.changed || c.due || '') + 'Z') || 0, due, from: 'lingq',
+    };
+    cards++;
+  }
+  saveWords();
+  renderLibrary();
+  alert(`가져오기 완료!${cloud ? ' (클라우드에도 올리는 중이에요)' : ''}\n아는 단어 ${known.toLocaleString()}개, 저장 단어·구문 ${cards.toLocaleString()}개`);
+};
+
+// ---------- 클라우드 동기화 (Firebase · 구글 로그인) ----------
+// 저장 위치: users/{uid}/words/b0~b15 (단어를 16묶음으로), users/{uid}/lessons/{id}, users/{uid}/meta/main
+// 병합: 단어·레슨은 u(수정 시각)가 더 최근인 쪽, 통계는 날짜별 큰 값
+// 여행 플래너와 같은 Firebase 프로젝트 (웹 설정값은 공개용이에요)
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyB01w0J3zIG0_DZLQZcrHMGdulu-WkMLKY",
+  authDomain: "travel-planner-2d036.firebaseapp.com",
+  projectId: "travel-planner-2d036",
+  storageBucket: "travel-planner-2d036.firebasestorage.app",
+  messagingSenderId: "317961318718",
+  appId: "1:317961318718:web:7cdf9b38ba26dba0457c6f"
+};
+const NB = 16;
+const bucketOf = k => { let h = 0; for (const c of k) h = (h * 31 + c.codePointAt(0)) >>> 0; return h % NB; };
+let cloud = null, pushTimer = null, lastPull = 0;
+let deleted = store.load('ml_deleted', []);
+let pushed = { words: {}, lessons: {}, meta: null }; // 클라우드에 있는 내용(JSON) — 바뀐 것만 올리기 위해
+const setSync = t => { $('syncStatus').textContent = t; };
+
+function schedulePush() {
+  if (!cloud?.ready) return;
+  clearTimeout(pushTimer);
+  pushTimer = setTimeout(push, 2500);
+}
+function bucketsJson() {
+  const bs = Array.from({ length: NB }, () => ({}));
+  for (const [k, w] of Object.entries(words)) bs[bucketOf(k)][k] = w;
+  return bs.map(o => JSON.stringify(o));
+}
+async function push() {
+  pushTimer = null;
+  if (!cloud?.ready) return;
+  const { fs, db, uid } = cloud, jobs = [];
+  bucketsJson().forEach((j, b) => {
+    if (pushed.words[b] === j) return;
+    pushed.words[b] = j;
+    jobs.push(fs.setDoc(fs.doc(db, 'users', uid, 'words', 'b' + b), { data: j }));
+  });
+  for (const l of lessons) {
+    const j = JSON.stringify(l);
+    if (pushed.lessons[l.id] === j) continue;
+    pushed.lessons[l.id] = j;
+    jobs.push(fs.setDoc(fs.doc(db, 'users', uid, 'lessons', l.id), { data: j }));
+  }
+  for (const id of Object.keys(pushed.lessons)) if (!lessons.some(l => l.id === id)) {
+    delete pushed.lessons[id];
+    jobs.push(fs.deleteDoc(fs.doc(db, 'users', uid, 'lessons', id)));
+  }
+  const meta = JSON.stringify({ log, deleted });
+  if (pushed.meta !== meta) { pushed.meta = meta; jobs.push(fs.setDoc(fs.doc(db, 'users', uid, 'meta', 'main'), { data: meta })); }
+  if (!jobs.length) return;
+  setSync('☁️ 저장 중…');
+  try { await Promise.all(jobs); setSync('☁️ 동기화됨'); }
+  catch (e) {
+    console.error(e);
+    setSync('⚠️ 클라우드 저장 실패');
+    pushed = { words: {}, lessons: { ...pushed.lessons }, meta: null }; // 다음 저장 때 다시 시도
+  }
+}
+async function pull() {
+  if (!cloud) return;
+  const { fs, db, uid } = cloud;
+  setSync('☁️ 불러오는 중…');
+  try {
+    const [ws, ls, meta] = await Promise.all([
+      fs.getDocs(fs.collection(db, 'users', uid, 'words')),
+      fs.getDocs(fs.collection(db, 'users', uid, 'lessons')),
+      fs.getDoc(fs.doc(db, 'users', uid, 'meta', 'main')),
+    ]);
+    if (meta.exists()) {
+      const m = JSON.parse(meta.data().data);
+      deleted = [...new Set([...deleted, ...(m.deleted || [])])];
+      for (const [d, x] of Object.entries(m.log || {})) {
+        const cur = (log[d] ??= {});
+        for (const f of ['known', 'lingqs', 'reviewed']) cur[f] = Math.max(cur[f] || 0, x[f] || 0);
+      }
+      pushed.meta = meta.data().data;
+    }
+    ws.forEach(d => {
+      pushed.words[+d.id.slice(1)] = d.data().data;
+      for (const [k, w] of Object.entries(JSON.parse(d.data().data)))
+        if (!words[k] || (w.u || 0) > (words[k].u || 0)) words[k] = w;
+    });
+    ls.forEach(d => {
+      const l = JSON.parse(d.data().data);
+      pushed.lessons[l.id] = d.data().data;
+      const i = lessons.findIndex(x => x.id === l.id);
+      if (i < 0) lessons.push(l);
+      else if (l.id !== current?.id && (l.u || 0) > (lessons[i].u || 0)) lessons[i] = l; // 지금 읽는 레슨은 그대로
+    });
+    lessons = lessons.filter(l => !deleted.includes(l.id));
+    store.save('ml_words', words); store.save('ml_lessons', lessons); store.save('ml_log', log); store.save('ml_deleted', deleted);
+    lastPull = Date.now();
+    cloud.ready = true;
+    renderStat();
+    if (!$('v-library').classList.contains('hidden')) renderLibrary();
+    if (!$('v-vocab').classList.contains('hidden')) renderVocab();
+    setSync('☁️ 동기화됨');
+    push(); // 이 기기에만 있던 변경을 올림
+  } catch (e) {
+    console.error(e);
+    setSync(e.code === 'permission-denied' ? '⚠️ 클라우드 권한 없음 (보안 규칙 확인)' : '⚠️ 불러오기 실패');
+  }
+}
+async function initCloud() {
+  const base = 'https://www.gstatic.com/firebasejs/10.12.2/';
+  let appMod, authMod, fs;
+  try {
+    [appMod, authMod, fs] = await Promise.all(['app', 'auth', 'firestore'].map(n => import(`${base}firebase-${n}.js`)));
+  } catch (e) { console.error(e); setSync('오프라인 — 이 기기에만 저장'); return; }
+  const app = appMod.initializeApp(FIREBASE_CONFIG), auth = authMod.getAuth(app), db = fs.getFirestore(app);
+  const btn = $('authBtn');
+  btn.classList.remove('hidden');
+  btn.onclick = async () => {
+    if (auth.currentUser) {
+      if (confirm(`${auth.currentUser.email} 에서 로그아웃할까요?\n(이 기기에 저장된 데이터는 그대로 남아요)`)) await authMod.signOut(auth);
+      return;
+    }
+    const provider = new authMod.GoogleAuthProvider();
+    try { await authMod.signInWithPopup(auth, provider); }
+    catch (e) {
+      if (e.code === 'auth/popup-blocked' || e.code === 'auth/operation-not-supported-in-this-environment') await authMod.signInWithRedirect(auth, provider);
+      else if (!/popup-closed|cancelled-popup/.test(e.code)) alert('로그인 실패: ' + e.code);
+    }
+  };
+  authMod.onAuthStateChanged(auth, user => {
+    cloud = null;
+    pushed = { words: {}, lessons: {}, meta: null };
+    if (!user) { btn.textContent = '☁️ 로그인'; setSync(''); return; }
+    btn.textContent = '☁️'; btn.title = `${user.email} — 누르면 로그아웃`;
+    cloud = { fs, db, uid: user.uid, ready: false };
+    pull();
+  });
+  // 앱으로 돌아올 때마다 다른 기기의 변경을 받아옴
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden && cloud?.ready && Date.now() - lastPull > 30000) pull();
+  });
+}
+initCloud();
+
+renderStat();
+show('library');
+</script>
+</body>
+</html>
