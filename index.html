@@ -77,15 +77,16 @@ main{max-width:1100px;margin:0 auto;padding:16px}
 .eops button{padding:4px 7px}
 .prog{flex:1;height:8px;border-radius:4px;background:var(--line);cursor:pointer;overflow:hidden}
 .prog i{display:block;height:100%;width:0;background:var(--accent);transition:width .3s}
-.video{position:sticky;top:56px;z-index:4;aspect-ratio:16/9;max-height:45vh;margin:0 auto 12px;border-radius:12px;overflow:hidden;background:#000}
-.video.flow{position:relative;top:auto!important} /* 스크립트 상자 모드: 영상은 제자리에 */
-#text.boxed{overflow-y:auto;max-height:var(--textH,60vh);position:relative;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+/* 리더: 재생 줄·영상은 메뉴 아래 고정, 스크립트만 스크롤 */
+.readtop{position:sticky;top:var(--hh,56px);z-index:4;background:var(--bg);padding-bottom:4px}
+.readtop .player{margin-bottom:8px}
+.video{aspect-ratio:16/9;max-height:38vh;margin:0 auto 8px;border-radius:12px;overflow:hidden;background:#000}
 .video iframe{width:100%;height:100%;border:0;display:block}
 .lq{display:flex;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);cursor:pointer}
 .lq:last-child{border-bottom:none}
 .lv{width:28px;height:28px;border-radius:50%;background:var(--l1);display:grid;place-items:center;font-size:14px;flex:none}
 #sTransText{font-size:16px;margin:8px 0;padding:8px 10px;border-left:3px solid var(--accent)}
-#panel{position:sticky;top:70px}
+#panel{position:sticky;top:calc(var(--hh,56px) + var(--rt,0px) + 8px)}
 #panel .word{font-size:24px;font-weight:700;word-break:break-word}
 .status button{min-width:40px;border-radius:20px}
 .chips button{border-radius:16px;font-size:14px;padding:3px 10px;margin:2px 0}
@@ -144,7 +145,7 @@ td,th{padding:8px;border-bottom:1px solid var(--line);text-align:left;vertical-a
     <div class="row" style="margin:4px 0 12px">
       <h2 style="margin:0;font-size:20px">📚 내 레슨 <span class="muted" id="libCount"></span></h2>
       <div class="row tabs" style="margin-left:auto">
-        <button data-lf="all" class="on">전체</button><button data-lf="video">🎬 영상</button><button data-lf="text">📄 글</button>
+        <button data-lf="all" class="on">전체</button><button data-lf="video">🎬 영상</button><button data-lf="text">📄 글</button><button data-lf="done">✓ 다 읽음</button>
         <button class="primary" data-view="new">＋ 새 레슨</button>
       </div>
     </div>
@@ -204,6 +205,7 @@ td,th{padding:8px;border-bottom:1px solid var(--line);text-align:left;vertical-a
       <button id="editLesson">✏️ 편집</button>
       <button id="finishPage" class="primary" title="파란 단어를 모두 '아는 단어'로">✓ 다 읽었어요</button>
     </div>
+    <div id="readTop" class="readtop">
     <div class="card row player" style="padding:10px 12px">
       <button id="nfOpen" class="primary hidden" title="지금 문장 시간으로 넷플릭스 열기">▶ 넷플릭스에서 이 장면</button>
       <button id="back5" title="5초 뒤로">⟲5</button>
@@ -227,6 +229,7 @@ td,th{padding:8px;border-bottom:1px solid var(--line);text-align:left;vertical-a
       </div>
     </div>
     <div class="video hidden" id="ytWrap"><div id="yt"></div></div>
+    </div>
     <div class="reader">
       <div>
         <div class="card" id="text"></div>
@@ -410,7 +413,7 @@ function lessonStats(l) {
   set.forEach(k => { const s = statusOf(k); if (s === 0) unknown++; else if (isLearning(s)) lingqs++; });
   return { total: set.size, unknown, lingqs };
 }
-// 서재 필터: 전체 / 🎬 영상 / 📄 글
+// 서재 필터: 전체 / 🎬 영상 / 📄 글 (다 읽은 레슨 제외) / ✓ 다 읽음
 let libFilter = 'all';
 document.querySelectorAll('[data-lf]').forEach(b => b.onclick = () => {
   libFilter = b.dataset.lf;
@@ -421,9 +424,9 @@ function renderLibrary() {
   const list = $('lessonList');
   if (!lessons.length) { list.innerHTML = '<div class="card" style="text-align:center"><p>아직 레슨이 없어요.</p><button class="primary" onclick="show(\'new\')">＋ 새 레슨 만들기</button></div>'; $('libCount').textContent = ''; return; }
   const recent = lessons.slice().sort((a, b) => (b.opened || b.created) - (a.opened || a.created))
-    .filter(l => libFilter === 'all' || (libFilter === 'video') === !!(l.video || l.netflix));
+    .filter(l => libFilter === 'done' ? l.done : !l.done && (libFilter === 'all' || (libFilter === 'video') === !!(l.video || l.netflix)));
   $('libCount').textContent = `${recent.length}개`;
-  if (!recent.length) { list.innerHTML = `<p class="muted">${libFilter === 'video' ? '영상' : '글'} 레슨이 아직 없어요.</p>`; return; }
+  if (!recent.length) { list.innerHTML = `<p class="muted">${{ all: '읽는 중인', video: '영상', text: '글', done: '다 읽은' }[libFilter]} 레슨이 아직 없어요.</p>`; return; }
   list.innerHTML = '<div class="grid">' + recent.map(l => {
     const st = lessonStats(l);
     const pct = st.total ? Math.round(st.unknown / st.total * 100) : 0;
@@ -923,6 +926,7 @@ function openLesson(id) {
   current.opened = Date.now(); saveLessons();
   show('reader');
   $('readerTitle').textContent = current.title;
+  updateFinishBtn();
   sentences = [];
   const sentSpan = s => `<span class="sent" data-i="${sentences.push(s.trim()) - 1}">${tokenize(s)} </span>`;
   if (isTimed()) {
@@ -1076,13 +1080,10 @@ function openPanel(k, example) {
   if (!playing) speak(k);
   revealAbovePanel(selRange[0] || document.querySelector(`#text .sent[data-i="${selSent}"]`));
 }
-// 아이폰: 아래에서 올라오는 단어 창에 문장이 가리지 않게, 영상 바로 아래로 스크롤
+// 아이폰: 아래에서 올라오는 단어 창에 문장이 가리지 않게, 고정 영역 바로 아래로 스크롤
 function revealAbovePanel(el) {
   if (innerWidth > 800 || !el) return;
-  if (boxed) { $('text').scrollTo({ top: el.offsetTop - 8, behavior: 'smooth' }); return; } // 스크립트 상자 안에서 위로
-  const vid = $('ytWrap'), header = document.querySelector('header');
-  const top = header.offsetHeight + (vid.classList.contains('hidden') ? 0 : vid.offsetHeight) + 12;
-  window.scrollBy({ top: el.getBoundingClientRect().top - top, behavior: 'smooth' });
+  window.scrollBy({ top: el.getBoundingClientRect().top - topBottom() - 12, behavior: 'smooth' });
 }
 function closePanel() {
   selected = null;
@@ -1191,11 +1192,23 @@ async function loadDefinitions(k) {
   }
 }
 
+// ✓ 다 읽었어요: 파란 단어 → 아는 단어, 레슨은 서재의 "✓ 다 읽음"으로 / 다 읽은 레슨에서는 다시 "읽는 중"으로
+function updateFinishBtn() {
+  $('finishPage').textContent = current?.done ? '↩ 다시 읽는 중으로' : '✓ 다 읽었어요';
+  $('finishPage').classList.toggle('primary', !current?.done);
+}
 $('finishPage').onclick = () => {
+  if (!current) return;
+  if (current.done) {
+    delete current.done; saveLessons(); updateFinishBtn();
+    return toast('↩ 서재의 읽는 중 목록으로 돌려놨어요');
+  }
   const ks = new Set([...document.querySelectorAll('#text .w.sn')].map(el => el.dataset.k));
-  if (!ks.size) return alert('남은 새 단어가 없어요!');
-  if (!confirm(`파란 단어 ${ks.size}개를 '아는 단어'로 표시할까요?`)) return;
+  if (!confirm(ks.size ? `파란 단어 ${ks.size}개를 '아는 단어'로 표시하고, 이 레슨을 "✓ 다 읽음"으로 옮길까요?` : '이 레슨을 "✓ 다 읽음"으로 옮길까요?')) return;
   ks.forEach(k => setStatus(k, 5));
+  current.done = Date.now(); saveLessons();
+  show('library');
+  toast('✓ 다 읽음으로 옮겼어요 (서재의 "✓ 다 읽음"에서 다시 볼 수 있어요)');
 };
 
 // ---------- 문장 보기 (LingQ Sentence View) ----------
@@ -1288,7 +1301,6 @@ function updatePlayer() {
   $('text').classList.toggle('hidden', !settings.cc);
   $('text').classList.toggle('focus', settings.focus);
   $('phraseHint').classList.toggle('hidden', !settings.cc);
-  setBoxed(v && settings.video && settings.cc && !settings.focus);
   document.querySelectorAll('#text .sent.playing, #text .sent.cur').forEach(x => x.classList.remove('playing', 'cur'));
   const el = document.querySelector(`#text .sent[data-i="${playIdx}"]`);
   if (el) {
@@ -1298,30 +1310,19 @@ function updatePlayer() {
   renderSentExtra();
   updateProgress();
 }
-// 전체 보기 + 영상: 위는 영상, 아래는 스크립트 상자(상자 안에서만 스크롤) — 둘이 겹치지 않게 구분
-let boxed = false;
-function fitTextBox() {
-  const h = innerHeight - document.querySelector('header').offsetHeight - $('ytWrap').offsetHeight - 28;
-  document.documentElement.style.setProperty('--textH', Math.max(220, h) + 'px');
-}
-function setBoxed(on) {
-  $('text').classList.toggle('boxed', on);
-  $('ytWrap').classList.toggle('flow', on);
-  if (on) fitTextBox();
-  if (on && !boxed) { // 처음 나눌 때 영상이 메뉴 바로 아래 오도록 화면 맞춤
-    const y = $('ytWrap').getBoundingClientRect().top + scrollY - document.querySelector('header').offsetHeight - 6;
-    window.scrollTo({ top: y, behavior: 'smooth' });
-  }
-  boxed = on;
-}
-addEventListener('resize', () => { if (boxed) fitTextBox(); });
+// 메뉴·재생 줄 높이를 CSS 변수로 (고정 영역 아래로 스크롤 위치 맞춤)
+const topBottom = () => document.querySelector('header').offsetHeight + $('readTop').offsetHeight;
+new ResizeObserver(() => {
+  document.documentElement.style.setProperty('--hh', document.querySelector('header').offsetHeight + 'px');
+  document.documentElement.style.setProperty('--rt', $('readTop').offsetHeight + 'px');
+}).observe(document.body);
 // 현재 문장으로 스크롤 (문장 보기는 항상 화면에 있어 필요 없음)
 function scrollToCurrent() {
   if (settings.focus) return;
   const el = document.querySelector(`#text .sent[data-i="${playIdx}"]`);
   if (!el) return;
-  if (boxed) { const box = $('text'); box.scrollTo({ top: el.offsetTop - box.clientHeight / 4, behavior: 'smooth' }); }
-  else el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  const top = topBottom(); // 고정 영역 아래 보이는 부분의 1/3 지점에
+  window.scrollBy({ top: el.getBoundingClientRect().top - top - (innerHeight - top) / 3, behavior: 'smooth' });
 }
 function playFrom(i) {
   if (i >= sentences.length) { stopPlay(); playIdx = 0; updatePlayer(); return; }
