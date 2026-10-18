@@ -571,6 +571,17 @@ $('nfFile').onchange = async e => {
   $('newText').value = /-->/.test(t) ? timedSubsToTranscript(t) : t;
   e.target.value = '';
 };
+// Mac 크롬 확장 프로그램(netflix-extension)이 보낸 넷플릭스 대본 → 새 레슨 화면에 자동 채움
+window.addEventListener('message', e => {
+  const d = e.data;
+  if (e.source !== window || d?.type !== 'mylingq-netflix' || !/^\d+$/.test(d.movieId || '')) return;
+  show('new');
+  setSource('netflix');
+  $('nfInput').value = `https://www.netflix.com/watch/${d.movieId}`;
+  $('newTitle').value = d.title || '';
+  $('newText').value = d.transcript || '';
+  alert(`넷플릭스 대본 ${String(d.transcript || '').split('\n').length}줄을 가져왔어요.\n확인하고 '레슨 만들기'를 누르세요.`);
+});
 function youtubeId(url) {
   const m = url.match(/(?:youtu\.be\/|[?&]v=|\/(?:embed|shorts|live)\/)([\w-]{11})/);
   return m ? m[1] : null;
