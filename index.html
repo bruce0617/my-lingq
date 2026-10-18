@@ -302,7 +302,8 @@ td,th{padding:8px;border-bottom:1px solid var(--line);text-align:left;vertical-a
       <div class="row tabs" style="margin-bottom:10px">
         <button data-vt="all" class="on">전체 <span class="muted" id="vcAll"></span></button>
         <button data-vt="phrases">구문 <span class="muted" id="vcPh"></span></button>
-        <button data-vt="due">복습 예정 <span class="muted" id="vcDue"></span></button>
+        <button data-vt="due">다시 볼 단어 <span class="muted" id="vcDue"></span></button>
+        <button data-vt="mem">🧠 암기 <span class="muted" id="vcMem"></span></button>
       </div>
       <div class="row">
         <input id="vSearch" placeholder="검색" style="flex:1;min-width:140px">
@@ -319,7 +320,28 @@ td,th{padding:8px;border-bottom:1px solid var(--line);text-align:left;vertical-a
 
   <!-- 복습 -->
   <section id="v-review" class="hidden">
-    <div class="card flash" id="flash"></div>
+    <!-- 복습 시작: 개수 선택 + 기록 -->
+    <div id="revSetup">
+      <div class="card" style="text-align:center">
+        <h2 style="margin:0 0 4px;font-size:20px">🔁 복습</h2>
+        <p class="muted" id="revPool" style="margin:0 0 12px"></p>
+        <div class="row" style="justify-content:center">
+          <button class="primary" data-rn="15">15개</button>
+          <button class="primary" data-rn="30">30개</button>
+          <button class="primary" data-rn="50">50개</button>
+        </div>
+        <div class="row" style="justify-content:center;margin-top:12px">
+          <span class="muted">'알았어요'</span>
+          <select id="memSel" style="width:auto"><option value="3">3번</option><option value="5">5번</option><option value="7">7번</option></select>
+          <span class="muted">채우면 🧠 암기 완료</span>
+        </div>
+      </div>
+      <div class="card" style="margin-top:12px">
+        <b>복습 기록</b>
+        <table style="margin-top:8px"><thead><tr><th>날짜</th><th>복습 횟수</th><th>본 카드</th><th>🧠 암기 완료</th></tr></thead><tbody id="revHist"></tbody></table>
+      </div>
+    </div>
+    <div class="card flash hidden" id="flash"></div>
   </section>
 
   <!-- 통계 -->
@@ -409,7 +431,7 @@ function setStatus(k, s) {
   touchWord(k);
   if (s === 5 && prev !== 5) bump('known');
   if (isLearning(s) && !isLearning(prev) && prev !== 5) bump('lingqs');
-  if (isLearning(s) && w.due === undefined) w.due = Date.now();
+  if (isLearning(s) && prev === 5) { delete w.ok; delete w.mem; } // 다시 학습 중으로 돌리면 암기 횟수도 처음부터
   saveWords();
   document.querySelectorAll(`#text .w[data-k="${CSS.escape(k)}"]`).forEach(el => {
     const keep = ['sel', 'ph'].filter(c => el.classList.contains(c));
@@ -432,7 +454,8 @@ function show(view) {
 }
 document.querySelectorAll('[data-view]').forEach(b => b.onclick = () => show(b.dataset.view));
 
-const dueWords = () => Object.entries(words).filter(([, w]) => isLearning(w.status) && (w.due ?? 0) <= Date.now());
+// 다시 볼 단어: 복습에서 마지막에 '몰랐어요'를 누른 학습 중 단어 (다음 복습에 먼저 나옴)
+const dueWords = () => Object.entries(words).filter(([, w]) => isLearning(w.status) && w.again);
 function renderStat() {
   const vals = Object.values(words);
   $('stat').textContent = `아는 단어 ${vals.filter(w => w.status === 5).length.toLocaleString()} · 오늘 저장 ${log[today()]?.lingqs || 0}`;
@@ -1434,10 +1457,11 @@ function renderVocab() {
   $('vcAll').textContent = entries.filter(([, w]) => isLearning(w.status)).length;
   $('vcPh').textContent = entries.filter(([k, w]) => isPhrase(k) && isLearning(w.status)).length;
   $('vcDue').textContent = due.size;
+  $('vcMem').textContent = entries.filter(([, w]) => w.mem).length;
   const rows = entries
-    .filter(([k, w]) => (vTab === 'phrases' ? isPhrase(k) : vTab === 'due' ? due.has(k) : true) && test(w.status)
+    .filter(([k, w]) => (vTab === 'phrases' ? isPhrase(k) : vTab === 'due' ? due.has(k) : vTab === 'mem' ? w.mem : true) && (vTab === 'mem' || test(w.status))
       && (!q || k.includes(q) || (w.meaning || '').toLowerCase().includes(q)))
-    .sort((a, b) => b[1].added - a[1].added).slice(0, 300);
+    .sort((a, b) => vTab === 'mem' ? b[1].mem - a[1].mem : b[1].added - a[1].added).slice(0, 300);
   const btns = (k, s) => [[-1, '🚫'], [1, '1'], [2, '2'], [3, '3'], [4, '4'], [5, '✓']]
     .map(([v, t]) => `<button data-s="${v}" class="${v === s ? 'on' : ''}">${t}</button>`).join('');
   $('vList').innerHTML = rows.map(([k, w]) => `<div class="vrow" data-k="${esc(k)}">
@@ -1455,56 +1479,79 @@ $('vList').onclick = e => {
   if (b && row) { setStatus(row.dataset.k, +b.dataset.s); renderVocab(); }
 };
 
-// ---------- 복습 (간격 반복) ----------
-// 알았어요 → 다음 복습까지 1일, 3일, 8일, 20일…로 늘어남 / 몰랐어요 → 10분 뒤 다시
-let queue = [], qi = 0;
+// ---------- 복습 ----------
+// 15·30·50개를 고르면 학습 중 단어·문장을 무작위로 (지난번 '몰랐어요' 단어 먼저)
+// 몰랐어요 → 이번 복습 안에서 몇 장 뒤에 다시, 다음 복습에도 먼저 나옴
+// 알았어요 → 횟수 +1, 정한 횟수(3·5·7번)를 채우면 🧠 암기 완료 (아는 단어로 분류)
+let queue = [], qi = 0, sess = null;
+const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 function startReview() {
-  queue = dueWords().sort(() => Math.random() - 0.5).slice(0, 30).map(([k]) => k);
-  qi = 0; renderCard(false);
+  $('revSetup').classList.remove('hidden');
+  $('flash').classList.add('hidden');
+  const pool = Object.values(words).filter(w => isLearning(w.status)).length;
+  $('revPool').textContent = pool ? `학습 중인 단어·문장 ${pool.toLocaleString()}개 · 다시 볼 단어 ${dueWords().length}개` : '레슨에서 단어나 문장을 저장하면 복습할 수 있어요.';
+  $('memSel').value = String(settings.memN || 3);
+  const rows = Object.entries(log).filter(([, x]) => x.sessions || x.reviewed).sort((x, y) => y[0].localeCompare(x[0])).slice(0, 30);
+  $('revHist').innerHTML = rows.map(([d, x]) => {
+    const [, m, day] = d.split('-');
+    return `<tr><td>${d === today() ? '오늘' : `${+m}월 ${+day}일`}</td><td>${x.sessions || 0}회</td><td>${x.reviewed || 0}</td><td>${x.memorized || 0}</td></tr>`;
+  }).join('') || '<tr><td colspan="4" class="muted">아직 복습 기록이 없어요</td></tr>';
 }
-function nextDueText() {
-  const next = Object.values(words).filter(w => isLearning(w.status) && w.due > Date.now()).map(w => w.due).sort((a, b) => a - b)[0];
-  if (!next) return '';
-  const h = Math.round((next - Date.now()) / 3600000);
-  return `다음 복습: ${h < 1 ? '1시간 안에' : h < 24 ? `${h}시간 뒤` : `${Math.round(h / 24)}일 뒤`}`;
-}
+$('memSel').onchange = () => { settings.memN = +$('memSel').value; saveSettings(); };
+document.querySelectorAll('[data-rn]').forEach(b => b.onclick = () => {
+  const n = +b.dataset.rn;
+  const learning = Object.entries(words).filter(([, w]) => isLearning(w.status));
+  if (!learning.length) return alert('복습할 단어가 없어요. 레슨에서 단어나 문장을 저장해 주세요.');
+  const again = shuffle(learning.filter(([, w]) => w.again)), rest = shuffle(learning.filter(([, w]) => !w.again));
+  queue = shuffle([...again, ...rest].slice(0, n).map(([k]) => k));
+  qi = 0; sess = { n: queue.length, ok: 0, miss: 0, mem: [] };
+  $('revSetup').classList.add('hidden');
+  $('flash').classList.remove('hidden');
+  renderCard(false);
+});
 function renderCard(revealed) {
   const box = $('flash');
-  if (!queue.length) {
-    box.innerHTML = `<p>지금 복습할 단어가 없어요 👍</p><p class="muted">${nextDueText() || '레슨에서 단어에 뜻을 적으면 복습 카드가 생겨요.'}</p>`;
-    return;
-  }
   if (qi >= queue.length) {
-    box.innerHTML = `<p>🎉 복습 완료!</p><p class="muted">${nextDueText()}</p><button class="primary" onclick="startReview()">남은 복습 확인</button>`;
+    box.innerHTML = `<p style="font-size:22px">🎉 복습 완료!</p>
+      <p>${sess.n}개 · 😀 알았어요 ${sess.ok} · 😵 몰랐어요 ${sess.miss}</p>
+      ${sess.mem.length ? `<p>🧠 이번에 암기 완료: <b>${sess.mem.map(esc).join(', ')}</b></p>` : ''}
+      <button class="primary" onclick="startReview()">처음으로</button>`;
     return;
   }
-  const k = queue[qi], w = words[k];
+  const k = queue[qi], w = words[k], need = settings.memN || 3;
   const ex = esc(w.example || '').replace(new RegExp(`\\b(${esc(k).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})\\b`, 'i'), '<b>$1</b>');
-  box.innerHTML = `<div class="muted">${qi + 1} / ${queue.length} · 레벨 ${w.status}</div>
+  box.innerHTML = `<div class="muted">${qi + 1} / ${queue.length} · 🧠 ${Math.min(w.ok || 0, need)}/${need}${w.again ? ' · 지난번 몰랐어요' : ''}</div>
     <div class="word ${k.length > 30 ? 'long' : ''}">${esc(k)} <button id="cardSpeak">🔊</button></div>
     <div class="ex" style="margin-top:8px">${ex}</div>
     ${revealed ? `<div class="meaning">${esc(w.meaning || '(뜻 없음)')}</div>
       <div class="row" style="justify-content:center;margin-top:16px">
         <button onclick="grade(false)">😵 몰랐어요</button><button class="primary" onclick="grade(true)">😀 알았어요</button></div>`
-    : `<div style="margin-top:16px"><button class="primary" onclick="renderCard(true)">뜻 보기</button></div>`}`;
+    : `<div style="margin-top:16px"><button class="primary" onclick="renderCard(true)">뜻 보기</button></div>`}
+    <div style="margin-top:20px"><button onclick="startReview()">그만하기</button></div>`;
   $('cardSpeak').onclick = () => speak(k);
 }
 function grade(ok) {
   const k = queue[qi], w = words[k];
   if (ok) {
-    w.interval = w.interval ? Math.round(w.interval * 2.5) : 1;
-    w.due = Date.now() + w.interval * DAY;
-    w.status = Math.min(5, w.status + 1);
-    if (w.status === 5) bump('known');
+    sess.ok++;
+    w.ok = (w.ok || 0) + 1;
+    delete w.again;
+    if (w.ok >= (settings.memN || 3)) { // 🧠 암기 완료 → 아는 단어
+      w.status = 5; w.mem = Date.now();
+      sess.mem.push(k);
+      bump('known'); bump('memorized');
+    } else w.status = Math.min(4, w.status + 1);
   } else {
-    w.interval = 0;
-    w.due = Date.now() + 10 * 60 * 1000;
+    sess.miss++;
+    w.again = true;
     w.status = Math.max(1, w.status - 1);
-    if (!queue.slice(qi + 1).includes(k)) queue.push(k); // 이번 세션 끝에 한 번 더
+    queue.splice(Math.min(queue.length, qi + 4), 0, k); // 몇 장 뒤에 다시
   }
   touchWord(k);
   bump('reviewed');
-  saveWords(); qi++; renderCard(false);
+  qi++;
+  if (qi >= queue.length) bump('sessions');
+  saveWords(); renderCard(false);
 }
 
 // ---------- 통계 ----------
@@ -1672,7 +1719,7 @@ async function pull() {
       deleted = [...new Set([...deleted, ...(m.deleted || [])])];
       for (const [d, x] of Object.entries(m.log || {})) {
         const cur = (log[d] ??= {});
-        for (const f of ['known', 'lingqs', 'reviewed']) cur[f] = Math.max(cur[f] || 0, x[f] || 0);
+        for (const f of ['known', 'lingqs', 'reviewed', 'sessions', 'memorized']) cur[f] = Math.max(cur[f] || 0, x[f] || 0);
       }
       pushed.meta = meta.data().data;
     }
