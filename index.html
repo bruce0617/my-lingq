@@ -480,11 +480,14 @@ function youtubeId(url) {
   const m = url.match(/(?:youtu\.be\/|[?&]v=|\/(?:embed|shorts|live)\/)([\w-]{11})/);
   return m ? m[1] : null;
 }
-// 자막 서버: 집 Mac(server.mjs의 /api/transcript) → 구글 Apps Script 순서로 시도
-const TRANSCRIPT_API = 'https://script.google.com/macros/s/AKfycbyKB2nWg9Xw50mOZZNoRam7MDvTknIFhtxwmiemXClyufxf45oCyWhkOIw0V2CAleD6/exec'; // Apps Script 웹 앱
+// 자막 서버: 집 Mac(같은 Wi-Fi는 /api/transcript, 밖에서는 Tailscale Funnel) → 구글 Apps Script 순서로 시도
+// (유튜브가 구글 서버 요청은 대부분 막아서 집 Mac이 주 경로)
+const MAC_RELAY = 'https://macbookpro.tail6ccc94.ts.net/api/transcript';
+const TRANSCRIPT_API ='https://script.google.com/macros/s/AKfycbyKB2nWg9Xw50mOZZNoRam7MDvTknIFhtxwmiemXClyufxf45oCyWhkOIw0V2CAleD6/exec'; // Apps Script 웹 앱
 async function fetchTranscriptApi(id) {
   const urls = [];
   if (!location.hostname.endsWith('github.io')) urls.push(`/api/transcript?v=${id}`);
+  else urls.push(`${MAC_RELAY}?v=${id}`);
   if (TRANSCRIPT_API) urls.push(`${TRANSCRIPT_API}?v=${id}`);
   let lastErr = '자막 서버가 아직 설정되지 않았어요';
   for (const u of urls) {
