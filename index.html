@@ -164,9 +164,15 @@ td,th{padding:8px;border-bottom:1px solid var(--line);text-align:left;vertical-a
       <div class="row tabs" style="margin-bottom:10px">
         <b style="margin-right:4px">가져올 곳</b>
         <button data-src="youtube" class="on">🎬 유튜브</button>
+        <button data-src="netflix">🎞 넷플릭스</button>
         <button data-src="paste">붙여넣기</button>
         <button data-src="url">웹 기사 링크</button>
         <button data-src="file">파일 (txt·자막)</button>
+      </div>
+      <div id="src-netflix" class="hidden" style="margin-bottom:8px">
+        <input id="nfInput" type="url" placeholder="https://www.netflix.com/watch/… 넷플릭스 재생 화면 주소" style="margin-bottom:6px">
+        <div class="muted" style="margin-bottom:6px">넷플릭스는 약관상 자막을 자동으로 가져올 수 없어요. 가지고 있는 <b>자막 파일(.srt/.vtt)</b>을 선택하거나, 시간이 붙은 대본을 아래 칸에 붙여넣으세요. 공부하다가 <b>▶ 넷플릭스에서 이 장면</b>을 누르면 그 시간으로 넷플릭스가 열려요.</div>
+        <input id="nfFile" type="file" accept=".srt,.vtt,.txt">
       </div>
       <div id="src-youtube" style="margin-bottom:8px">
         <input id="ytInput" type="url" placeholder="https://youtu.be/… 유튜브 영상 주소를 붙여넣으세요" style="margin-bottom:6px">
@@ -199,6 +205,8 @@ td,th{padding:8px;border-bottom:1px solid var(--line);text-align:left;vertical-a
       <button id="finishPage" class="primary" title="파란 단어를 모두 '아는 단어'로">✓ 다 읽었어요</button>
     </div>
     <div class="card row player" style="padding:10px 12px">
+      <button id="nfOpen" class="primary hidden" title="지금 문장 시간으로 넷플릭스 열기">▶ 넷플릭스에서 이 장면</button>
+      <button id="nfWeb" class="hidden" title="넷플릭스 웹사이트로 열기">🌐 웹으로</button>
       <button id="back5" title="5초 뒤로">⟲5</button>
       <button id="pPrev" title="이전 문장">⏮</button>
       <button id="pPlay" class="primary" style="min-width:72px">▶ 재생</button>
@@ -414,15 +422,15 @@ function renderLibrary() {
   const list = $('lessonList');
   if (!lessons.length) { list.innerHTML = '<div class="card" style="text-align:center"><p>아직 레슨이 없어요.</p><button class="primary" onclick="show(\'new\')">＋ 새 레슨 만들기</button></div>'; $('libCount').textContent = ''; return; }
   const recent = lessons.slice().sort((a, b) => (b.opened || b.created) - (a.opened || a.created))
-    .filter(l => libFilter === 'all' || (libFilter === 'video') === !!l.video);
+    .filter(l => libFilter === 'all' || (libFilter === 'video') === !!(l.video || l.netflix));
   $('libCount').textContent = `${recent.length}개`;
   if (!recent.length) { list.innerHTML = `<p class="muted">${libFilter === 'video' ? '영상' : '글'} 레슨이 아직 없어요.</p>`; return; }
   list.innerHTML = '<div class="grid">' + recent.map(l => {
     const st = lessonStats(l);
     const pct = st.total ? Math.round(st.unknown / st.total * 100) : 0;
-    const thumb = l.video ? `style="background-image:url('https://i.ytimg.com/vi/${l.video}/mqdefault.jpg')"` : '';
+    const thumb = l.video ? `style="background-image:url('https://i.ytimg.com/vi/${l.video}/mqdefault.jpg')"` : l.netflix ? 'style="background:#141414;color:#e50914"' : '';
     return `<div class="lcard" data-open="${l.id}">
-      <div class="thumb" ${thumb}>${l.video ? '' : esc((l.title.match(/[A-Za-z0-9가-힣]/) || ['📄'])[0].toUpperCase())}
+      <div class="thumb" ${thumb}>${l.video ? '' : l.netflix ? 'N' : esc((l.title.match(/[A-Za-z0-9가-힣]/) || ['📄'])[0].toUpperCase())}
         <div class="counts"><span><i class="dot" style="background:#8fb8ff"></i>${st.unknown}</span><span><i class="dot" style="background:#ffd966"></i>${st.lingqs}</span></div></div>
       <div class="newbar"><i style="width:${100 - pct}%"></i></div>
       <div class="lbody"><b>${esc(l.title)}</b>
@@ -457,6 +465,14 @@ $('addLesson').onclick = () => {
     $('ytInput').value = '';
     $('ytStatus').textContent = '주소를 넣으면 자막을 자동으로 가져와요. 가져온 자막은 아래 칸에서 고칠 수 있어요.';
   }
+  if (activeSrc === 'netflix') {
+    l.netflix = netflixId($('nfInput').value.trim());
+    if (!l.netflix) return alert('넷플릭스 재생 화면 주소(netflix.com/watch/숫자)를 넣어 주세요.');
+    l.cues = parseTranscript(/-->/.test(text) ? timedSubsToTranscript(text) : text); // .srt를 그대로 붙여넣어도 됨
+    if (!l.cues.length) return alert('대본에서 시간 표시를 찾지 못했어요. 자막 파일(.srt/.vtt)을 넣어 주세요.');
+    l.text = l.cues.map(c => c.text).join(' ');
+    $('nfInput').value = '';
+  }
   lessons.push(l); saveLessons();
   $('newText').value = ''; $('newTitle').value = '';
   openLesson(l.id);
@@ -467,8 +483,10 @@ let activeSrc = 'youtube';
 function setSource(src) {
   activeSrc = src;
   document.querySelectorAll('[data-src]').forEach(x => x.classList.toggle('on', x.dataset.src === src));
-  for (const s of ['url', 'file', 'youtube']) $('src-' + s).classList.toggle('hidden', src !== s);
-  $('newText').placeholder = src === 'youtube'
+  for (const s of ['url', 'file', 'youtube', 'netflix']) $('src-' + s).classList.toggle('hidden', src !== s);
+  $('newText').placeholder = src === 'netflix'
+    ? '0:01 Hello there.\n0:04 How are you?\n\n(자막 파일을 선택하면 여기에 자동으로 채워져요)'
+    : src === 'youtube'
     ? '자막이 자동으로 들어와요. (직접 넣을 때는 유튜브 "스크립트 표시"에서 시간 표시와 함께 복사)'
     : '영어 기사, 대본, 책 내용을 여기에 붙여넣으세요';
 }
@@ -521,11 +539,38 @@ $('fileInput').onchange = async e => {
   $('newTitle').value = f.name.replace(/\.[^.]+$/, '');
   const subs = /\.(srt|vtt)$/i.test(f.name);
   // 유튜브 탭에서 넣은 자막 파일은 시간 정보를 유지해 영상과 맞춤
-  $('newText').value = subs ? (activeSrc === 'youtube' ? timedSubsToTranscript(t) : parseSubtitles(t)) : t;
+  $('newText').value = subs ? (activeSrc === 'youtube' || activeSrc === 'netflix' ? timedSubsToTranscript(t) : parseSubtitles(t)) : t;
   e.target.value = '';
 };
 
 // ---------- 유튜브 ----------
+// ---------- 넷플릭스 ----------
+// 넷플릭스는 다른 사이트 안에서 재생할 수 없어서(복제 방지·공식 삽입 플레이어 없음) 그 시간으로 넷플릭스를 열어 줌
+const IS_IOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+function netflixId(url) {
+  const m = url.match(/netflix\.com\/(?:[a-z]{2}(?:-[a-z]{2})?\/)?(?:watch|title)\/(\d+)/i) || url.match(/^(\d{6,})$/);
+  return m ? m[1] : null;
+}
+function netflixUrl(sec) { return `https://www.netflix.com/watch/${current.netflix}?t=${Math.max(0, Math.floor(sec || 0))}`; }
+// 아이폰: 넷플릭스 앱(nflx://)으로 열기 시도 / Mac: 웹 탭 하나를 계속 재사용
+function openNetflix(sec, forceWeb) {
+  if (!current?.netflix) return;
+  const web = netflixUrl(sec);
+  if (IS_IOS && !forceWeb) {
+    location.href = web.replace('https://', 'nflx://');
+    setTimeout(() => { if (!document.hidden) window.open(web, '_blank'); }, 2000); // 앱이 안 열리면 웹으로
+  } else window.open(web, 'netflix');
+}
+$('nfOpen').onclick = () => openNetflix(segs[playIdx]?.t);
+$('nfWeb').onclick = () => openNetflix(segs[playIdx]?.t, true);
+$('nfFile').onchange = async e => {
+  const f = e.target.files[0];
+  if (!f) return;
+  const t = await f.text();
+  if (!$('newTitle').value.trim()) $('newTitle').value = f.name.replace(/\.[^.]+$/, '');
+  $('newText').value = /-->/.test(t) ? timedSubsToTranscript(t) : t;
+  e.target.value = '';
+};
 function youtubeId(url) {
   const m = url.match(/(?:youtu\.be\/|[?&]v=|\/(?:embed|shorts|live)\/)([\w-]{11})/);
   return m ? m[1] : null;
@@ -684,7 +729,8 @@ function seekCue(i, play = false) {
   else if (!wasPlaying) ytPlayer?.pauseVideo?.();
   updatePlayer();
 }
-const isVideo = () => !!current?.video;
+const isVideo = () => !!current?.video;   // 유튜브 (앱 안에서 재생)
+const isTimed = () => !!(current?.video || current?.netflix); // 시간이 있는 대본 (유튜브·넷플릭스)
 
 // ---------- 리더 ----------
 let current = null, selected = null, sentences = [], selSent = 0, selRange = [];
@@ -726,7 +772,7 @@ function eRedo() { if (eIdx < eHist.length - 1) eRestore(eIdx + 1); }
 function eButtons() { $('eUndo').disabled = eIdx <= 0; $('eRedo').disabled = eIdx >= eHist.length - 1; }
 
 function eRender(focusIdx, caret) {
-  const video = !!current.video;
+  const video = isTimed();
   let html = '', lastMin = -1;
   eRows.forEach((r, i) => {
     if (video) {
@@ -753,10 +799,10 @@ function openEditor() {
   if (!current) return;
   stopPlay();
   $('eTitle').value = current.title;
-  eRows = current.video
+  eRows = isTimed()
     ? segs.map(c => ({ t: c.t, text: c.text }))
     : current.text.split(/\n+/).map(p => p.trim()).filter(Boolean).map(text => ({ text }));
-  $('eHint').innerHTML = current.video
+  $('eHint').innerHTML = isTimed()
     ? '문장마다 한 칸이에요. <b>✂️</b> 커서를 둔 곳에서 나누기 · <b>⤴</b> 윗문장과 합치기 · <b>🗑</b> 삭제 · 왼쪽 시간(0:12)을 고치면 영상 위치가 바뀌어요.'
     : '문단마다 한 칸이에요. <b>✂️</b> 커서를 둔 곳에서 나누기 · <b>⤴</b> 윗문단과 합치기 · <b>🗑</b> 삭제';
   show('edit');
@@ -794,7 +840,7 @@ $('eRows').addEventListener('click', e => {
     const before = txt.slice(0, pos).trim(), after = txt.slice(pos).trim();
     if (!before || !after) return alert('나누고 싶은 곳을 문장 중간에 커서로 찍은 뒤 ✂️를 누르세요.');
     const second = { text: after };
-    if (current.video) { // 뒷부분 시간 = 다음 문장까지를 단어 수 비율로 나눔
+    if (isTimed()) { // 뒷부분 시간 = 다음 문장까지를 단어 수 비율로 나눔
       const words = s => s.split(/\s+/).length, cur = eRows[i].t;
       const next = eRows[i + 1]?.t ?? cur + words(txt) * 0.4;
       second.t = cur + (next - cur) * words(before) / words(txt);
@@ -829,7 +875,7 @@ $('eCancel').onclick = () => {
 $('eSave').onclick = () => {
   const rows = eRows.map(r => ({ ...r, text: r.text.replace(/\s+/g, ' ').trim() })).filter(r => r.text);
   if (!rows.length) return alert('내용이 비어 있어요.');
-  if (current.video) {
+  if (isTimed()) {
     let last = 0; // 시간은 앞 문장보다 뒤여야 영상과 맞음
     current.cues = rows.map(r => ({ t: (last = Math.max(r.t, last)), text: r.text }));
     current.edited = true;
@@ -863,7 +909,7 @@ function openLesson(id) {
   $('readerTitle').textContent = current.title;
   sentences = [];
   const sentSpan = s => `<span class="sent" data-i="${sentences.push(s.trim()) - 1}">${tokenize(s)} </span>`;
-  if (current.video) {
+  if (isTimed()) {
     // 자막 줄을 이어 붙여 진짜 문장 단위로, 3문장씩 문단으로
     segs = current.edited ? current.cues : mergeCues(current.cues); // 편집한 레슨은 줄 = 문장 그대로
     const paras = [];
@@ -1001,7 +1047,7 @@ function openPanel(k, example) {
   $('pTrans').classList.add('hidden');
   $('pSave').textContent = statusOf(k) === 0 ? '💾 저장' : '💾 다시 저장';
   markStatusButtons(statusOf(k));
-  $('pSeek').classList.toggle('hidden', !isVideo());
+  $('pSeek').classList.toggle('hidden', !isTimed());
   $('extL').classList.toggle('hidden', !selRange.length);
   $('extR').classList.toggle('hidden', !selRange.length);
   const q = encodeURIComponent(k);
@@ -1034,7 +1080,7 @@ $('pSentSpeak').onclick = () => {
   if (isVideo() && playing) ytPlayer.pauseVideo();
   speak(sentences[selSent] || '');
 };
-$('pSeek').onclick = () => seekCue(selSent, true);
+$('pSeek').onclick = () => current?.netflix ? openNetflix(segs[selSent]?.t) : seekCue(selSent, true);
 
 function setMeaning(text) {
   const k = selected;
@@ -1205,7 +1251,11 @@ function speak(text, onend, rate) {
 function updatePlayer() {
   const v = isVideo();
   $('pPlay').textContent = playing ? '⏸ 정지' : v ? '▶ 재생' : '▶ 듣기';
-  const time = v && segs[playIdx] ? ` · ${fmtTime(segs[playIdx].t)}` : '';
+  const time = isTimed() && segs[playIdx] ? ` · ${fmtTime(segs[playIdx].t)}` : '';
+  const nf = !!current?.netflix;
+  $('nfOpen').classList.toggle('hidden', !nf);
+  $('nfWeb').classList.toggle('hidden', !nf || !IS_IOS);
+  $('pPlay').classList.toggle('hidden', nf); // 넷플릭스는 앱 안에서 재생할 수 없음
   $('sentPos').textContent = sentences.length ? `${playIdx + 1} / ${sentences.length}${time}` : '';
   // 켜진 기능은 파란 테두리(on)로 표시
   $('viewToggle').textContent = settings.focus ? '🎯 문장' : '📄 전체';
