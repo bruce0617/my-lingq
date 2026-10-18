@@ -729,14 +729,23 @@ function syncCaption() {
   if (i === playIdx) return;
   if (loop && playing) { ytPlayer.seekTo(segs[playIdx].t, true); return; }
   playIdx = i;
-  current.pos = i;
+  setPos(i);
   updatePlayer();
   if (!selected) scrollToCurrent();
+}
+// 보던 위치 저장: posAt(본 시각)으로 기기 간 '가장 최근에 본 위치'를 맞춤. 저장은 1.5초 모아서
+let posTimer = null;
+function setPos(i) {
+  if (!current || current.pos === i) return;
+  current.pos = i;
+  current.posAt = Date.now();
+  clearTimeout(posTimer);
+  posTimer = setTimeout(saveLessons, 1500);
 }
 // 자막 줄로 영상 이동. 멈춰 있던 영상은 계속 멈춰 있게 (유튜브는 seek하면 자동 재생됨)
 function seekCue(i, play = false) {
   playIdx = Math.max(0, Math.min(sentences.length - 1, i));
-  if (current) current.pos = playIdx;
+  setPos(playIdx);
   const wasPlaying = playing;
   ytPlayer?.seekTo?.(segs[playIdx].t, true);
   if (play) ytPlayer?.playVideo?.();
@@ -986,7 +995,7 @@ function selectEls(els) {
 function openWords(ws) {
   const sent = ws[0].closest('.sent');
   selSent = +sent.dataset.i;
-  if (!playing && selSent !== playIdx) { playIdx = selSent; updatePlayer(); }
+  if (!playing && selSent !== playIdx) { playIdx = selSent; setPos(playIdx); updatePlayer(); }
   selectEls(ws);
   openPanel(ws.map(el => el.dataset.k).join(' '), sent.textContent.trim());
 }
@@ -1325,7 +1334,7 @@ function scrollToCurrent() {
 function playFrom(i) {
   if (i >= sentences.length) { stopPlay(); playIdx = 0; updatePlayer(); return; }
   playIdx = Math.max(0, i); playing = true;
-  if (current) { current.pos = playIdx; saveLessons(); }
+  setPos(playIdx);
   updatePlayer();
   scrollToCurrent();
   speak(sentences[playIdx], () => { if (playing && playIdx === i) playFrom(loop ? i : i + 1); });
@@ -1339,7 +1348,7 @@ function gotoSent(i) {
   closePanel();
   if (isVideo()) seekCue(i);
   else if (playing) playFrom(i);
-  else { playIdx = i; updatePlayer(); scrollToCurrent(); }
+  else { playIdx = i; setPos(i); updatePlayer(); scrollToCurrent(); }
 }
 $('pPlay').onclick = () => {
   if (isVideo()) {
@@ -1570,6 +1579,14 @@ let cloud = null, pushTimer = null, lastPull = 0;
 let deleted = store.load('ml_deleted', []);
 let pushed = { words: {}, lessons: {}, meta: null }; // 클라우드에 있는 내용(JSON) — 바뀐 것만 올리기 위해
 const setSync = t => { $('syncStatus').textContent = t; };
+// 잠깐 떴다 사라지는 알림
+function toast(msg) {
+  const el = Object.assign(document.createElement('div'), { textContent: msg });
+  Object.assign(el.style, { position: 'fixed', left: '50%', bottom: 'max(24px, env(safe-area-inset-bottom))', transform: 'translateX(-50%)',
+    background: 'rgba(30,30,30,.92)', color: '#fff', padding: '10px 16px', borderRadius: '20px', fontSize: '15px', zIndex: 50, maxWidth: '90vw' });
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
 
 function schedulePush() {
   if (!cloud?.ready) return;
@@ -1615,6 +1632,7 @@ async function pull() {
   if (!cloud) return;
   const { fs, db, uid } = cloud;
   setSync('☁️ 불러오는 중…');
+  let movedTo = 0;
   try {
     const [ws, ls, meta] = await Promise.all([
       fs.getDocs(fs.collection(db, 'users', uid, 'words')),
@@ -1639,8 +1657,18 @@ async function pull() {
       const l = JSON.parse(d.data().data);
       pushed.lessons[l.id] = d.data().data;
       const i = lessons.findIndex(x => x.id === l.id);
-      if (i < 0) lessons.push(l);
-      else if (l.id !== current?.id && (l.u || 0) > (lessons[i].u || 0)) lessons[i] = l; // 지금 읽는 레슨은 그대로
+      if (i < 0) { lessons.push(l); return; }
+      const loc = lessons[i];
+      if (l.id !== current?.id && (l.u || 0) > (loc.u || 0)) { lessons[i] = l; return; } // 지금 읽는 레슨 내용은 그대로
+      // 보던 위치는 따로: 더 최근에 본 기기의 위치를 따름 (지금 열려 있는 레슨도)
+      if ((l.posAt || 0) > (loc.posAt || 0)) {
+        loc.pos = l.pos; loc.posAt = l.posAt;
+        if (loc === current && !playing && l.pos < sentences.length && l.pos !== playIdx) {
+          if (isVideo()) seekCue(l.pos); else { playIdx = l.pos; updatePlayer(); }
+          scrollToCurrent();
+          movedTo = l.pos + 1;
+        }
+      }
     });
     lessons = lessons.filter(l => !deleted.includes(l.id));
     store.save('ml_words', words); store.save('ml_lessons', lessons); store.save('ml_log', log); store.save('ml_deleted', deleted);
@@ -1650,6 +1678,7 @@ async function pull() {
     if (!$('v-library').classList.contains('hidden')) renderLibrary();
     if (!$('v-vocab').classList.contains('hidden')) renderVocab();
     setSync('☁️ 동기화됨');
+    if (movedTo) toast(`↪ 다른 기기에서 보던 ${movedTo}번째 문장으로 이동했어요`);
     push(); // 이 기기에만 있던 변경을 올림
   } catch (e) {
     console.error(e);
@@ -1687,7 +1716,7 @@ async function initCloud() {
   });
   // 앱으로 돌아올 때마다 다른 기기의 변경을 받아옴
   document.addEventListener('visibilitychange', () => {
-    if (!document.hidden && cloud?.ready && Date.now() - lastPull > 30000) pull();
+    if (!document.hidden && cloud?.ready && Date.now() - lastPull > 5000) pull();
   });
 }
 initCloud();
