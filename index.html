@@ -552,11 +552,14 @@ function netflixId(url) {
   return m ? m[1] : null;
 }
 function netflixUrl(sec) { return `https://www.netflix.com/watch/${current.netflix}?t=${Math.max(0, Math.floor(sec || 0))}`; }
-// 아이폰: 넷플릭스 앱(nflx://)으로 열기 시도 / Mac: 웹 탭 하나를 계속 재사용
+// Mac 크롬 + 확장 프로그램: 열린 넷플릭스 탭에서 그 장면으로 이동(없으면 새 탭) — 탭이 두 개면 동시 재생 에러가 남
+// 아이폰: 넷플릭스 앱(nflx://)으로 열기 시도 / 그 외: 웹 탭 하나를 계속 재사용
 function openNetflix(sec, forceWeb) {
   if (!current?.netflix) return;
   const web = netflixUrl(sec);
-  if (IS_IOS && !forceWeb) {
+  if (!IS_IOS && document.documentElement.dataset.mlqExt) {
+    window.postMessage({ type: 'mylingq-netflix-seek', movieId: current.netflix, sec: Math.floor(sec || 0) }, location.origin);
+  } else if (IS_IOS && !forceWeb) {
     location.href = web.replace('https://', 'nflx://');
     setTimeout(() => { if (!document.hidden) window.open(web, '_blank'); }, 2000); // 앱이 안 열리면 웹으로
   } else window.open(web, 'netflix');
