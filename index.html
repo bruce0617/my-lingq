@@ -67,6 +67,14 @@ main{max-width:1100px;margin:0 auto;padding:16px}
 .w.ph{text-decoration:underline dotted var(--phl);text-decoration-thickness:2px;text-underline-offset:6px}
 .w.sel{outline:2px solid var(--accent)}
 .player select{width:auto}
+/* 레슨 편집: 문장(문단)마다 한 칸, 영상은 1분 단위로 묶음 */
+.etools{position:sticky;top:var(--hh,56px);z-index:4;background:var(--card);padding:8px 0;border-bottom:1px solid var(--line)}
+.egroup{margin:16px 0 4px;font-weight:700;color:var(--accent);font-size:14px}
+.erow{display:flex;gap:8px;align-items:flex-start;padding:6px 0;border-bottom:1px solid var(--line)}
+.etime{width:68px;flex:none;font-family:ui-monospace,Menlo,monospace;font-size:14px;padding:6px;color:var(--muted)}
+.etext{flex:1;min-width:0;resize:none;overflow:hidden;line-height:1.5;padding:6px 8px}
+.eops{display:flex;gap:4px;flex:none}
+.eops button{padding:4px 7px}
 .prog{flex:1;height:8px;border-radius:4px;background:var(--line);cursor:pointer;overflow:hidden}
 .prog i{display:block;height:100%;width:0;background:var(--accent);transition:width .3s}
 .video{position:sticky;top:56px;z-index:4;aspect-ratio:16/9;max-height:45vh;margin:0 auto 12px;border-radius:12px;overflow:hidden;background:#000}
@@ -104,6 +112,9 @@ td,th{padding:8px;border-bottom:1px solid var(--line);text-align:left;vertical-a
   #text.focus .sent.cur{font-size:22px}
   .vrow{grid-template-columns:1fr}
   .player{gap:6px}
+  .erow{flex-wrap:wrap}
+  .erow .etext{flex-basis:100%;order:3} /* 아이폰: 시간·버튼 한 줄, 문장은 아래 넓게 */
+  .eops{margin-left:auto}
   .player button,.player select{padding:5px 8px;font-size:14px}
   #sentPos{width:100%}
   body.panel-open main{padding-bottom:55vh} /* 단어 창 높이만큼 스크롤 여유 */
@@ -247,14 +258,17 @@ td,th{padding:8px;border-bottom:1px solid var(--line);text-align:left;vertical-a
   <!-- 레슨 편집 -->
   <section id="v-edit" class="hidden">
     <div class="card">
-      <b>✏️ 레슨 편집</b>
-      <input id="eTitle" placeholder="제목" style="margin:8px 0">
-      <div class="muted" id="eHint" style="margin-bottom:8px"></div>
-      <textarea id="eText" rows="20" style="font-family:ui-monospace,Menlo,monospace;font-size:15px;line-height:1.7"></textarea>
-      <div class="row" style="margin-top:8px">
+      <!-- 스크롤해도 위에 붙어 있는 도구 막대 -->
+      <div class="row etools" id="eTools">
+        <b style="margin-right:auto">✏️ 레슨 편집</b>
+        <button id="eUndo" title="되돌리기 (⌘Z / Ctrl+Z)">↶ 되돌리기</button>
+        <button id="eRedo" title="다시 실행 (⌘⇧Z / Ctrl+Y)">↷ 다시 실행</button>
         <button class="primary" id="eSave">저장</button>
         <button id="eCancel">취소</button>
       </div>
+      <input id="eTitle" placeholder="제목" style="margin:8px 0">
+      <div class="muted" id="eHint" style="margin-bottom:8px"></div>
+      <div id="eRows"></div>
     </div>
   </section>
 
@@ -659,63 +673,145 @@ function tokenize(s) {
   }
   return out + esc(s.slice(last));
 }
-// ---------- 레슨 편집 ----------
-// 영상 레슨: 한 줄 = 한 문장 ("0:12 문장"). 시간이 없는 줄은 앞 줄 시간을 따라감.
+// ---------- 레슨 편집 (문장마다 한 칸 · 되돌리기/다시 실행) ----------
+// 영상 레슨: 한 칸 = 한 문장 + 시간, 1분 단위로 묶어 보여줌 / 텍스트 레슨: 한 칸 = 한 문단
+let eRows = [], eHist = [], eIdx = -1, eTimer = null;
+const eSnap = () => JSON.stringify({ title: $('eTitle').value, rows: eRows });
+const autoSize = ta => { ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 'px'; };
+// 지금 상태를 되돌리기 기록에 남김 (글자 입력은 0.6초 멈췄을 때 한 번)
+function eCommit() {
+  clearTimeout(eTimer); eTimer = null;
+  const s = eSnap();
+  if (eHist[eIdx] === s) return;
+  eHist = eHist.slice(0, eIdx + 1);
+  eHist.push(s);
+  if (eHist.length > 300) eHist.shift();
+  eIdx = eHist.length - 1;
+  eButtons();
+}
+function eRestore(i) {
+  eIdx = i;
+  const s = JSON.parse(eHist[i]);
+  $('eTitle').value = s.title;
+  eRows = s.rows;
+  eRender();
+  eButtons();
+}
+function eUndo() { if (eTimer) eCommit(); if (eIdx > 0) eRestore(eIdx - 1); }
+function eRedo() { if (eIdx < eHist.length - 1) eRestore(eIdx + 1); }
+function eButtons() { $('eUndo').disabled = eIdx <= 0; $('eRedo').disabled = eIdx >= eHist.length - 1; }
+
+function eRender(focusIdx, caret) {
+  const video = !!current.video;
+  let html = '', lastMin = -1;
+  eRows.forEach((r, i) => {
+    if (video) {
+      const m = Math.floor(r.t / 60);
+      if (m !== lastMin) { lastMin = m; html += `<div class="egroup">⏱ ${m}:00 ~ ${m}:59</div>`; }
+    }
+    html += `<div class="erow" data-i="${i}">
+      ${video ? `<input class="etime" value="${fmtTime(r.t)}" title="영상 시간 (분:초)">` : `<span class="etime">${i + 1}</span>`}
+      <textarea class="etext" rows="1">${esc(r.text)}</textarea>
+      <span class="eops">
+        <button data-op="split" title="커서 위치에서 둘로 나누기">✂️</button>
+        <button data-op="merge" title="윗${video ? '문장' : '문단'}과 합치기" ${i ? '' : 'disabled'}>⤴</button>
+        <button data-op="del" title="삭제">🗑</button>
+      </span></div>`;
+  });
+  $('eRows').innerHTML = html || '<div class="muted">내용이 없어요. ↶ 되돌리기로 복구할 수 있어요.</div>';
+  $('eRows').querySelectorAll('.etext').forEach(autoSize);
+  if (focusIdx != null) {
+    const ta = $('eRows').querySelector(`.erow[data-i="${focusIdx}"] .etext`);
+    if (ta) { ta.focus(); ta.setSelectionRange(caret ?? 0, caret ?? 0); }
+  }
+}
 function openEditor() {
   if (!current) return;
+  stopPlay();
   $('eTitle').value = current.title;
-  if (current.video) {
-    $('eText').value = segs.map(c => `${fmtTime(c.t)} ${c.text}`).join('\n');
-    $('eHint').innerHTML = '<b>한 줄 = 한 문장</b>이에요. 끊긴 문장은 줄바꿈을 지워서 합치고, 너무 긴 문장은 엔터로 나누세요.<br>'
-      + '앞의 시간(0:12)은 영상 위치예요. 새로 나눈 줄에 시간이 없으면 앞 줄의 시간을 따라가요.';
-  } else {
-    $('eText').value = current.text;
-    $('eHint').textContent = '본문을 고칠 수 있어요. 빈 줄로 문단을 나눠요.';
-  }
+  eRows = current.video
+    ? segs.map(c => ({ t: c.t, text: c.text }))
+    : current.text.split(/\n+/).map(p => p.trim()).filter(Boolean).map(text => ({ text }));
+  $('eHint').innerHTML = current.video
+    ? '문장마다 한 칸이에요. <b>✂️</b> 커서를 둔 곳에서 나누기 · <b>⤴</b> 윗문장과 합치기 · <b>🗑</b> 삭제 · 왼쪽 시간(0:12)을 고치면 영상 위치가 바뀌어요.'
+    : '문단마다 한 칸이에요. <b>✂️</b> 커서를 둔 곳에서 나누기 · <b>⤴</b> 윗문단과 합치기 · <b>🗑</b> 삭제';
   show('edit');
+  document.documentElement.style.setProperty('--hh', document.querySelector('header').offsetHeight + 'px');
+  eHist = []; eIdx = -1;
+  eRender();
+  eCommit();
 }
-function parseEdited(raw) {
-  const exact = new Map(segs.map(c => [Math.floor(c.t), c.t])); // 원래 시간의 소수점 유지
-  const out = [];
-  let last = 0;
-  for (let line of raw.split('\n')) {
-    line = line.trim();
-    if (!line) continue;
-    const m = line.match(/^(?:(\d+):)?(\d+):(\d{2})\s+(.*)$/);
-    let t = last, text = line;
-    if (m) { const s = (+(m[1] || 0)) * 3600 + (+m[2]) * 60 + (+m[3]); t = exact.get(s) ?? s; text = m[4]; }
-    if (!text.trim()) continue;
-    t = Math.max(t, last); // 시간은 앞 줄보다 뒤여야 영상과 맞음
-    out.push({ t, text: text.trim(), timed: !!m });
-    last = t;
-  }
-  // 시간 없이 나눈 줄: 앞뒤 시간 사이를 단어 수 비율로 나눠 줌
-  for (let i = 0; i < out.length; i++) {
-    if (out[i].timed) continue;
-    let s = i - 1, e = i;
-    while (s >= 0 && !out[s].timed) s--;
-    while (e < out.length && !out[e].timed) e++;
-    if (s >= 0 && e < out.length) {
-      const wc = k => out[k].text.split(' ').length;
-      let total = 0, acc = 0;
-      for (let k = s; k < e; k++) total += wc(k);
-      for (let k = s; k < e; k++) { if (k > s) out[k].t = out[s].t + (out[e].t - out[s].t) * acc / total; acc += wc(k); }
+$('eRows').addEventListener('input', e => {
+  if (!e.target.classList.contains('etext')) return;
+  eRows[+e.target.closest('.erow').dataset.i].text = e.target.value;
+  autoSize(e.target);
+  clearTimeout(eTimer); eTimer = setTimeout(eCommit, 600);
+});
+$('eTitle').addEventListener('input', () => { clearTimeout(eTimer); eTimer = setTimeout(eCommit, 600); });
+// 시간 고치기 (분:초)
+$('eRows').addEventListener('change', e => {
+  if (!e.target.matches('input.etime')) return;
+  const i = +e.target.closest('.erow').dataset.i;
+  const m = e.target.value.trim().match(/^(?:(\d+):)?(\d+):(\d{2})$/);
+  if (!m) { e.target.value = fmtTime(eRows[i].t); return alert('시간은 0:12 처럼 분:초로 적어 주세요.'); }
+  const s = (+(m[1] || 0)) * 3600 + (+m[2]) * 60 + (+m[3]);
+  if (s === Math.floor(eRows[i].t)) return;
+  eRows[i].t = s;
+  eRender(); eCommit();
+});
+// ✂️ 나누기 · ⤴ 합치기 · 🗑 삭제
+$('eRows').addEventListener('click', e => {
+  const b = e.target.closest('[data-op]');
+  if (!b) return;
+  if (eTimer) eCommit();
+  const row = b.closest('.erow'), i = +row.dataset.i, ta = row.querySelector('.etext');
+  if (b.dataset.op === 'split') {
+    const txt = eRows[i].text, pos = ta.selectionStart;
+    const before = txt.slice(0, pos).trim(), after = txt.slice(pos).trim();
+    if (!before || !after) return alert('나누고 싶은 곳을 문장 중간에 커서로 찍은 뒤 ✂️를 누르세요.');
+    const second = { text: after };
+    if (current.video) { // 뒷부분 시간 = 다음 문장까지를 단어 수 비율로 나눔
+      const words = s => s.split(/\s+/).length, cur = eRows[i].t;
+      const next = eRows[i + 1]?.t ?? cur + words(txt) * 0.4;
+      second.t = cur + (next - cur) * words(before) / words(txt);
     }
-    i = e;
+    eRows.splice(i, 1, { ...eRows[i], text: before }, second);
+    eRender(i + 1, 0);
+  } else if (b.dataset.op === 'merge' && i > 0) {
+    const caret = eRows[i - 1].text.length + 1;
+    eRows[i - 1].text = `${eRows[i - 1].text} ${eRows[i].text}`.trim();
+    eRows.splice(i, 1);
+    eRender(i - 1, caret);
+  } else if (b.dataset.op === 'del') {
+    eRows.splice(i, 1);
+    eRender();
   }
-  return out.map(({ t, text }) => ({ t, text }));
-}
+  eCommit();
+});
+$('eUndo').onclick = eUndo;
+$('eRedo').onclick = eRedo;
+// 엑셀·PPT처럼 ⌘Z / ⌘⇧Z (윈도우 Ctrl+Z / Ctrl+Y)
+document.addEventListener('keydown', e => {
+  if ($('v-edit').classList.contains('hidden') || !(e.metaKey || e.ctrlKey)) return;
+  const k = e.key.toLowerCase();
+  if (k === 'z' && !e.shiftKey) { e.preventDefault(); eUndo(); }
+  else if ((k === 'z' && e.shiftKey) || k === 'y') { e.preventDefault(); eRedo(); }
+}, true);
 $('editLesson').onclick = openEditor;
-$('eCancel').onclick = () => openLesson(current.id);
+$('eCancel').onclick = () => {
+  if (eIdx > 0 && !confirm('고친 내용을 저장하지 않고 나갈까요?')) return;
+  openLesson(current.id);
+};
 $('eSave').onclick = () => {
-  const raw = $('eText').value;
-  if (!raw.trim()) return alert('내용이 비어 있어요.');
+  const rows = eRows.map(r => ({ ...r, text: r.text.replace(/\s+/g, ' ').trim() })).filter(r => r.text);
+  if (!rows.length) return alert('내용이 비어 있어요.');
   if (current.video) {
-    current.cues = parseEdited(raw);
+    let last = 0; // 시간은 앞 문장보다 뒤여야 영상과 맞음
+    current.cues = rows.map(r => ({ t: (last = Math.max(r.t, last)), text: r.text }));
     current.edited = true;
     current.text = current.cues.map(c => c.text).join(' ');
   } else {
-    current.text = raw.trim();
+    current.text = rows.map(r => r.text).join('\n\n');
   }
   current.title = $('eTitle').value.trim() || current.title;
   saveLessons();
