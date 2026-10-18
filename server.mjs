@@ -73,6 +73,11 @@ http.createServer(async (req, res) => {
     res.writeHead(code, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', ...cors });
     res.end(JSON.stringify(body));
   };
+  // Chrome 사설망 접근 사전 확인: Tailscale 기기에서는 이 주소가 내부망(100.x)으로 연결됨
+  if (req.method === 'OPTIONS') {
+    res.writeHead(204, { ...cors, 'Access-Control-Allow-Methods': 'GET', 'Access-Control-Allow-Private-Network': 'true', 'Access-Control-Max-Age': '600' });
+    return res.end();
+  }
   const url = new URL(req.url, 'http://x');
   if (url.pathname !== '/api/transcript') return reply(404, { error: 'not found' });
   const now = Date.now();
