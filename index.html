@@ -334,14 +334,49 @@ td,th{padding:8px;border-bottom:1px solid var(--line);text-align:left;vertical-a
 
 <script>
 // ---------- 저장소 ----------
+// IndexedDB(용량 넉넉) 사용. 시작할 때 한 번 다 읽어 메모리에 두고, 저장은 바로 IndexedDB에 씀.
+// IndexedDB를 못 쓰는 환경이면 예전처럼 localStorage(약 5MB)에 저장.
+const STORE_KEYS = ['ml_lessons', 'ml_words', 'ml_log', 'ml_settings', 'ml_deleted'];
 const store = {
-  load(k, d) { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } },
-  save(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { alert('저장 실패: ' + e.message); } },
+  cache: {}, db: null, ok: false,
+  load(k, d) { return this.cache[k] ?? d; },
+  save(k, v) {
+    if (!this.ok) return; // 다 읽기 전에는 저장하지 않음 (빈 값으로 덮어쓰지 않게)
+    this.cache[k] = v;
+    if (!this.db) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { alert('저장 실패: ' + e.message); } return; }
+    const tx = this.db.transaction('kv', 'readwrite');
+    tx.objectStore('kv').put(v, k);
+    tx.onerror = () => alert('저장 실패: ' + (tx.error?.message || ''));
+  },
 };
-let lessons = store.load('ml_lessons', []);
-let words = store.load('ml_words', {});   // { 단어 또는 "구문 키": {status, meaning, example, added, due, interval} }
-let log = store.load('ml_log', {});       // { 'YYYY-MM-DD': {known, lingqs, reviewed} }
-const settings = { rate: 0.9, voice: '', focus: true, cc: true, video: true, trans: false, ...store.load('ml_settings', {}) };
+const idbReq = r => new Promise((res, rej) => { r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
+async function openStore() {
+  try {
+    const open = indexedDB.open('mylingq', 1);
+    open.onupgradeneeded = () => open.result.createObjectStore('kv');
+    const db = await idbReq(open);
+    const get = k => idbReq(db.transaction('kv').objectStore('kv').get(k));
+    if (!(await get('migrated'))) { // 처음 한 번: 예전 localStorage 데이터를 옮기고 비움
+      const tx = db.transaction('kv', 'readwrite'), os = tx.objectStore('kv');
+      for (const k of STORE_KEYS) { const v = localStorage.getItem(k); if (v != null) os.put(JSON.parse(v), k); }
+      os.put(Date.now(), 'migrated');
+      await new Promise((res, rej) => { tx.oncomplete = res; tx.onerror = tx.onabort = () => rej(tx.error); });
+      STORE_KEYS.forEach(k => localStorage.removeItem(k));
+    }
+    for (const k of STORE_KEYS) store.cache[k] = await get(k);
+    store.db = db;
+  } catch (e) {
+    console.error('IndexedDB 사용 불가 — localStorage 사용', e);
+    for (const k of STORE_KEYS) try { store.cache[k] = JSON.parse(localStorage.getItem(k)); } catch { /* 없음 */ }
+  }
+  store.ok = true;
+  navigator.storage?.persist?.().catch(() => {}); // 브라우저가 공간 정리할 때 이 앱 데이터는 지우지 않도록 요청
+}
+// 실제 값은 openStore() 후 채움 (맨 아래 시작 부분)
+let lessons = [];
+let words = {};   // { 단어 또는 "구문 키": {status, meaning, example, added, due, interval} }
+let log = {};     // { 'YYYY-MM-DD': {known, lingqs, reviewed} }
+const settings = { rate: 0.9, voice: '', focus: true, cc: true, video: true, trans: false };
 // 저장할 때마다 클라우드 업로드 예약(로그인했을 때만). u = 마지막 수정 시각 → 기기 간 병합 기준
 const saveLessons = () => { if (current) current.u = Date.now(); store.save('ml_lessons', lessons); schedulePush(); };
 const saveWords = () => { store.save('ml_words', words); renderStat(); schedulePush(); };
@@ -1569,7 +1604,7 @@ const FIREBASE_CONFIG = {
 const NB = 16;
 const bucketOf = k => { let h = 0; for (const c of k) h = (h * 31 + c.codePointAt(0)) >>> 0; return h % NB; };
 let cloud = null, pushTimer = null, lastPull = 0;
-let deleted = store.load('ml_deleted', []);
+let deleted = [];
 let pushed = { words: {}, lessons: {}, meta: null }; // 클라우드에 있는 내용(JSON) — 바뀐 것만 올리기 위해
 const setSync = t => { $('syncStatus').textContent = t; };
 // 잠깐 떴다 사라지는 알림
@@ -1712,10 +1747,18 @@ async function initCloud() {
     if (!document.hidden && cloud?.ready && Date.now() - lastPull > 5000) pull();
   });
 }
-initCloud();
-
-renderStat();
-show('library');
+openStore().then(() => {
+  lessons = store.load('ml_lessons', []);
+  words = store.load('ml_words', {});
+  log = store.load('ml_log', {});
+  deleted = store.load('ml_deleted', []);
+  Object.assign(settings, store.load('ml_settings', {}));
+  $('rateSel').value = String(settings.rate);
+  loadVoices();
+  initCloud();
+  renderStat();
+  show('library');
+});
 </script>
 <script>
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
