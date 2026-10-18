@@ -59,3 +59,28 @@ http.createServer(async (req, res) => {
   try { send(res, 200, await fs.readFile(file), TYPES[path.extname(file)] || 'application/octet-stream'); }
   catch { send(res, 404, 'Not found', 'text/plain'); }
 }).listen(PORT, HOST, () => console.log(`My LingQ → http://${HOST === '0.0.0.0' ? 'localhost' : HOST}:${PORT}`));
+
+// ---------- 밖에서 쓰는 자막 중계 (Tailscale Funnel로 이 포트만 인터넷에 공개) ----------
+// /api/transcript 하나만 처리 — 앱 파일·개인 데이터(data/)는 여기서 절대 제공하지 않음
+const RELAY_PORT = +(process.env.RELAY_PORT || 8787);
+const ALLOWED_ORIGINS = ['https://bruce0617.github.io', 'http://localhost:8000'];
+const LIMIT_PER_HOUR = 60; // 남용 방지: 집 인터넷이 유튜브에 막히지 않도록
+let hits = [];
+http.createServer(async (req, res) => {
+  const origin = req.headers.origin;
+  const cors = ALLOWED_ORIGINS.includes(origin) ? { 'Access-Control-Allow-Origin': origin, Vary: 'Origin' } : {};
+  const reply = (code, body) => {
+    res.writeHead(code, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', ...cors });
+    res.end(JSON.stringify(body));
+  };
+  const url = new URL(req.url, 'http://x');
+  if (url.pathname !== '/api/transcript') return reply(404, { error: 'not found' });
+  const now = Date.now();
+  hits = hits.filter(t => now - t < 3600_000);
+  if (hits.length >= LIMIT_PER_HOUR) return reply(429, { error: '잠시 후 다시 시도해 주세요 (시간당 요청 한도)' });
+  hits.push(now);
+  const v = url.searchParams.get('v') || '';
+  if (!/^[\w-]{11}$/.test(v)) return reply(400, { error: '영상 ID가 올바르지 않아요' });
+  try { reply(200, await fetchTranscript(v, url.searchParams.get('lang') || 'en')); }
+  catch (e) { reply(502, { error: e.message }); }
+}).listen(RELAY_PORT, '127.0.0.1', () => console.log(`자막 중계 → http://127.0.0.1:${RELAY_PORT}/api/transcript`));
