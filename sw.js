@@ -1,4 +1,4 @@
-const CACHE_NAME = 'my-lingq-shell-v1';
+const CACHE_NAME = 'my-lingq-shell-v2';
 const APP_SHELL = [
   './',
   './index.html',
@@ -35,8 +35,13 @@ self.addEventListener('fetch', event => {
   if (url.origin !== self.location.origin) return;
 
   if (request.mode === 'navigate') {
+    // 온라인이면 최신 화면을 받아 캐시도 갱신 → 오프라인에서도 마지막으로 본 버전이 열림
+    const shell = new URL('./index.html', self.registration.scope).href;
     event.respondWith(
-      fetch(request).catch(() => caches.match(new URL('./index.html', self.registration.scope)))
+      fetch(request).then(res => {
+        if (res.ok) { const copy = res.clone(); caches.open(CACHE_NAME).then(c => c.put(shell, copy)); }
+        return res;
+      }).catch(() => caches.match(shell))
     );
   } else if (SHELL_URLS.has(url.href)) {
     event.respondWith(caches.match(request).then(cached => cached || fetch(request)));
