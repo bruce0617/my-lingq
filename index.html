@@ -547,19 +547,20 @@ $('fileInput').onchange = async e => {
 // ---------- 넷플릭스 ----------
 // 넷플릭스는 다른 사이트 안에서 재생할 수 없어서(복제 방지·공식 삽입 플레이어 없음) 그 시간으로 넷플릭스를 열어 줌
 const IS_IOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const IS_IPHONE = /iPhone|iPod/.test(navigator.userAgent);
 function netflixId(url) {
   const m = url.match(/netflix\.com\/(?:[a-z]{2}(?:-[a-z]{2})?\/)?(?:watch|title)\/(\d+)/i) || url.match(/^(\d{6,})$/);
   return m ? m[1] : null;
 }
 function netflixUrl(sec) { return `https://www.netflix.com/watch/${current.netflix}?t=${Math.max(0, Math.floor(sec || 0))}`; }
 // Mac 크롬 + 확장 프로그램: 열린 넷플릭스 탭에서 그 장면으로 이동(없으면 새 탭) — 탭이 두 개면 동시 재생 에러가 남
-// 아이폰: 넷플릭스 앱(nflx://)으로 열기 시도 / 그 외: 웹 탭 하나를 계속 재사용
+// 아이패드: 넷플릭스 앱(nflx://)으로 열기 시도 / 아이폰: 넷플릭스 앱이 시간(t)을 무시해서 웹으로 / 그 외: 웹 탭 하나를 계속 재사용
 function openNetflix(sec, forceWeb) {
   if (!current?.netflix) return;
   const web = netflixUrl(sec);
   if (!IS_IOS && document.documentElement.dataset.mlqExt) {
     window.postMessage({ type: 'mylingq-netflix-seek', movieId: current.netflix, sec: Math.floor(sec || 0) }, location.origin);
-  } else if (IS_IOS && !forceWeb) {
+  } else if (IS_IOS && !IS_IPHONE && !forceWeb) {
     location.href = web.replace('https://', 'nflx://');
     setTimeout(() => { if (!document.hidden) window.open(web, '_blank'); }, 2000); // 앱이 안 열리면 웹으로
   } else window.open(web, 'netflix');
@@ -1277,7 +1278,7 @@ function updatePlayer() {
   const time = isTimed() && segs[playIdx] ? ` · ${fmtTime(segs[playIdx].t)}` : '';
   const nf = !!current?.netflix;
   $('nfOpen').classList.toggle('hidden', !nf);
-  $('nfWeb').classList.toggle('hidden', !nf || !IS_IOS);
+  $('nfWeb').classList.toggle('hidden', !nf || !IS_IOS || IS_IPHONE);
   $('pPlay').classList.toggle('hidden', nf); // 넷플릭스는 앱 안에서 재생할 수 없음
   $('sentPos').textContent = sentences.length ? `${playIdx + 1} / ${sentences.length}${time}` : '';
   // 켜진 기능은 파란 테두리(on)로 표시
