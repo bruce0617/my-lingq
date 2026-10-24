@@ -14,12 +14,13 @@
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="apple-touch-icon" sizes="180x180" href="./icons/icon-180.png">
 <title>My LingQ</title>
+<script>try { const t = localStorage.getItem('ml_theme'); if (t) document.documentElement.dataset.theme = t; } catch { /* 기기 설정 따름 */ }</script>
 <style>
 :root{
   --bg:#f6f5f2;--card:#fff;--text:#1f2328;--muted:#6b7280;--line:#e5e3de;--accent:#2f6fde;
   --new:#cfe2ff;--l1:#ffd966;--l2:#ffe48f;--l3:#ffefb8;--l4:#fff7dc;--play:#e3f4e8;--ok:#2e9e5b;--phl:#d99a00;--thumb:#33427a;
 }
-@media (prefers-color-scheme:dark){:root{
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){
   --bg:#17181a;--card:#222326;--text:#e8e8e8;--muted:#9aa0a6;--line:#34363a;--accent:#7aa7ff;
   --new:#22426e;--l1:#7a5d0c;--l2:#634d14;--l3:#4d3f1a;--l4:#3a331f;--play:#1d3a28;--phl:#e0b030;
 }}
@@ -116,17 +117,22 @@ td,th{padding:8px;border-bottom:1px solid var(--line);text-align:left;vertical-a
 /* ---------- 디자인: 애플 기본 앱 스타일 ---------- */
 /* 화면은 아이폰 기본 글꼴(SF), 읽는 글(스크립트·단어)은 Apple Books처럼 책 글꼴 */
 :root{
-  --bg:#f2f2f7;--card:#fff;--text:#000;--muted:#8a8a8e;--line:#d1d1d6;--accent:#007aff;--accent-soft:rgba(0,122,255,.12);
+  --bg:#f5f5f7;--bg-top:#fff;color-scheme:light;--card:#fff;--text:#000;--muted:#8a8a8e;--line:#d1d1d6;--accent:#007aff;--accent-soft:rgba(0,122,255,.12);
   --fill:rgba(118,118,128,.12);--bar:rgba(249,249,249,.94);
   --new:#dceaff;--l1:#ffd54a;--l2:#ffe17d;--l3:#ffecab;--l4:#fff6d8;--play:#e3f3ea;--ok:#34c759;--thumb:#8e8e93;
   --serif:"Literata",Georgia,"Times New Roman",serif;
 }
-@media (prefers-color-scheme:dark){:root{
-  --bg:#000;--card:#1c1c1e;--text:#fff;--muted:#8d8d93;--line:#38383a;--accent:#0a84ff;--accent-soft:rgba(10,132,255,.18);
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){
+  --bg:#000;--bg-top:#1c1c1e;color-scheme:dark;--card:#1c1c1e;--text:#fff;--muted:#8d8d93;--line:#38383a;--accent:#0a84ff;--accent-soft:rgba(10,132,255,.18);
   --fill:rgba(118,118,128,.24);--bar:rgba(22,22,24,.94);
   --new:#173a6b;--l1:#7a5d0c;--l2:#634d14;--l3:#4d3f1a;--l4:#3a331f;--play:#17342a;--ok:#30d158;
 }}
-body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Apple SD Gothic Neo","Segoe UI",sans-serif;letter-spacing:-.01em}
+:root[data-theme=dark]{
+  --bg:#000;--bg-top:#1c1c1e;color-scheme:dark;--card:#1c1c1e;--text:#fff;--muted:#8d8d93;--line:#38383a;--accent:#0a84ff;--accent-soft:rgba(10,132,255,.18);
+  --fill:rgba(118,118,128,.24);--bar:rgba(22,22,24,.94);
+  --new:#173a6b;--l1:#7a5d0c;--l2:#634d14;--l3:#4d3f1a;--l4:#3a331f;--play:#17342a;--ok:#30d158;
+}
+body{background:linear-gradient(180deg,var(--bg-top),var(--bg) 420px) no-repeat,var(--bg);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Apple SD Gothic Neo","Segoe UI",sans-serif;letter-spacing:-.01em}
 /* 버튼: 회색 채움 + 파란 글씨, 주요 버튼은 파랑 채움 (테두리·그림자 없음) */
 button{border:0;border-radius:10px;background:var(--fill);color:var(--accent);font-weight:500;transition:opacity .15s}
 button:active{opacity:.55}
@@ -143,6 +149,7 @@ header h1{font-size:17px;font-weight:600;margin-right:14px;letter-spacing:-.02em
 #nav button,#authBtn{background:none;color:var(--muted);padding:6px 12px}
 #nav button.active{color:var(--accent)}
 #authBtn{color:var(--accent)}
+#themeBtn{background:var(--fill);border-radius:16px;padding:5px 11px}
 .badge{background:#ff3b30}
 main{padding:24px}
 .card{border:0;border-radius:12px}
@@ -185,14 +192,16 @@ td,th{border-bottom:.5px solid var(--line)}
   header{position:static;background:none;backdrop-filter:none;-webkit-backdrop-filter:none;border:0;gap:6px;padding:10px 16px 0;padding-top:max(10px,env(safe-area-inset-top))}
   header h1{font-size:32px;font-weight:700;margin:0;letter-spacing:-.03em}
   header .stat{display:none}
-  #authBtn{margin-left:auto;background:var(--fill);border-radius:16px;padding:5px 14px}
+  #themeBtn{margin-left:auto}
+  #authBtn{background:var(--fill);border-radius:16px;padding:5px 14px}
   #nav{position:fixed;left:0;right:0;bottom:0;z-index:8;justify-content:space-around;gap:0;padding:6px 4px;padding-bottom:max(6px,env(safe-area-inset-bottom));background:var(--bar);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);border-top:.5px solid var(--line)}
   #nav button{flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;padding:2px 0;font-size:10.5px;position:relative}
-  .ti{display:block;font-size:22px;line-height:1.15;filter:grayscale(1);opacity:.5}
-  #nav button.active .ti{filter:none;opacity:1}
+  .ti{display:block;font-size:30px;line-height:1.15;opacity:.8;filter:drop-shadow(0 3px 3px rgba(0,0,0,.25));transition:transform .2s,filter .2s,opacity .2s}
+  #nav button.active .ti{opacity:1;transform:translateY(-3px) scale(1.12);filter:drop-shadow(0 7px 6px rgba(0,0,0,.3))}
   #nav .badge{position:absolute;top:-2px;left:calc(50% + 8px)}
-  main{padding:8px 16px calc(84px + env(safe-area-inset-bottom))}
+  main{padding:8px 16px calc(96px + env(safe-area-inset-bottom))}
   #v-library h2{font-size:22px!important}
+  #v-library .tabs{margin-left:0!important}
   body.reading{background:var(--card)}
   /* 아이폰 리더: LingQ처럼 스크립트가 화면을 채우고, 영상·재생 막대는 ▶를 누를 때만 아래에 뜸 */
   body.reading header{display:none}
@@ -237,13 +246,14 @@ td,th{border-bottom:.5px solid var(--line)}
 <header>
   <h1>My LingQ</h1>
   <nav id="nav">
-    <button data-view="new"><span class="ti">➕</span>새 레슨</button>
+    <button data-view="new"><span class="ti">📝</span>새 레슨</button>
     <button data-view="library"><span class="ti">📚</span>서재</button>
     <button data-view="vocab"><span class="ti">📖</span>단어장</button>
     <button data-view="review"><span class="ti">🔁</span>복습 <span class="badge hidden" id="dueBadge"></span></button>
     <button data-view="stats"><span class="ti">📊</span>통계</button>
   </nav>
   <span class="stat" id="stat"></span>
+  <button id="themeBtn" title="다크 모드 켜기/끄기"></button>
   <button id="authBtn" class="hidden" title="구글 로그인하면 아이폰·Mac 동기화">로그인</button>
   <span class="muted" id="syncStatus"></span>
 </header>
@@ -255,7 +265,6 @@ td,th{border-bottom:.5px solid var(--line)}
       <h2 style="margin:0;font-size:20px">내 레슨 <span class="muted" id="libCount"></span></h2>
       <div class="row tabs" style="margin-left:auto">
         <button data-lf="all" class="on">전체</button><button data-lf="reading">진행 중</button><button data-lf="video">영상</button><button data-lf="text">글</button><button data-lf="done">✓ 다 읽음</button>
-        <button class="primary" data-view="new">＋ 새 레슨</button>
       </div>
     </div>
     <div id="lessonList"></div>
@@ -577,6 +586,17 @@ function show(view) {
   window.scrollTo(0, 0);
 }
 document.querySelectorAll('[data-view]').forEach(b => b.onclick = () => show(b.dataset.view));
+
+// 다크 모드 켜기/끄기: 이 기기에만 기억 (처음엔 기기 설정을 따름)
+const isDark = () => document.documentElement.dataset.theme ? document.documentElement.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+const paintThemeBtn = () => { $('themeBtn').textContent = isDark() ? '☀️' : '🌙'; };
+$('themeBtn').onclick = () => {
+  const t = isDark() ? 'light' : 'dark';
+  document.documentElement.dataset.theme = t;
+  try { localStorage.setItem('ml_theme', t); } catch { /* 이번만 적용 */ }
+  paintThemeBtn();
+};
+paintThemeBtn();
 
 // 다시 볼 단어: 복습에서 마지막에 '몰랐어요'를 누른 학습 중 단어 (다음 복습에 먼저 나옴)
 const dueWords = () => Object.entries(words).filter(([, w]) => isLearning(w.status) && w.again);
