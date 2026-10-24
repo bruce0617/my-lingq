@@ -158,6 +158,7 @@ h2{letter-spacing:-.02em}
 .thumb{background-color:var(--thumb);font-family:var(--serif);font-weight:500}
 .thumb::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 45%,rgba(10,15,25,.55))}
 .counts{z-index:1}
+.donemark{position:absolute;left:8px;top:8px;z-index:1;background:var(--ok);color:#fff;font:600 12px/20px "Pretendard Variable",Pretendard,sans-serif;padding:0 8px;border-radius:6px}
 .dur{position:absolute;right:8px;bottom:8px;z-index:1;font-family:"Pretendard Variable",Pretendard,sans-serif;background:rgba(10,15,25,.72);color:#fff;font-size:12px;font-weight:600;line-height:20px;padding:0 7px;border-radius:6px}
 .counts span{background:rgba(10,15,25,.55);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
 .newbar{height:3px}
@@ -250,7 +251,7 @@ th{font-size:13px;color:var(--muted);font-weight:600}
     <div class="row" style="margin:4px 0 12px">
       <h2 style="margin:0;font-size:20px">내 레슨 <span class="muted" id="libCount"></span></h2>
       <div class="row tabs" style="margin-left:auto">
-        <button data-lf="all" class="on">전체</button><button data-lf="video">영상</button><button data-lf="text">글</button><button data-lf="done">✓ 다 읽음</button>
+        <button data-lf="all" class="on">전체</button><button data-lf="reading">진행 중</button><button data-lf="video">영상</button><button data-lf="text">글</button><button data-lf="done">✓ 다 읽음</button>
         <button class="primary" data-view="new">＋ 새 레슨</button>
       </div>
     </div>
@@ -591,7 +592,7 @@ function lessonStats(l) {
   set.forEach(k => { const s = statusOf(k); if (s === 0) unknown++; else if (isLearning(s)) lingqs++; });
   return { total: set.size, unknown, lingqs };
 }
-// 서재 필터: 전체 / 🎬 영상 / 📄 글 (다 읽은 레슨 제외) / ✓ 다 읽음
+// 서재 필터: 전체(다 읽은 것 포함) / 진행 중 / 영상 / 글 / ✓ 다 읽음
 let libFilter = 'all';
 document.querySelectorAll('[data-lf]').forEach(b => b.onclick = () => {
   libFilter = b.dataset.lf;
@@ -604,16 +605,16 @@ function renderLibrary() {
   const list = $('lessonList');
   if (!lessons.length) { list.innerHTML = '<div class="card" style="text-align:center"><p>아직 레슨이 없어요.</p><button class="primary" onclick="show(\'new\')">＋ 새 레슨 만들기</button></div>'; $('libCount').textContent = ''; return; }
   const recent = lessons.slice().sort((a, b) => (b.opened || b.created) - (a.opened || a.created))
-    .filter(l => libFilter === 'done' ? l.done : !l.done && (libFilter === 'all' || (libFilter === 'video') === !!(l.video || l.netflix)));
+    .filter(l => ({ all: true, reading: !l.done, done: !!l.done, video: !!(l.video || l.netflix), text: !(l.video || l.netflix) })[libFilter]);
   $('libCount').textContent = `${recent.length}개`;
-  if (!recent.length) { list.innerHTML = `<p class="muted">${{ all: '읽는 중인', video: '영상', text: '글', done: '다 읽은' }[libFilter]} 레슨이 아직 없어요.</p>`; return; }
+  if (!recent.length) { list.innerHTML = `<p class="muted">${{ all: '', reading: '진행 중인 ', video: '영상 ', text: '글 ', done: '다 읽은 ' }[libFilter]}레슨이 아직 없어요.</p>`; return; }
   list.innerHTML = '<div class="grid">' + recent.map(l => {
     const st = lessonStats(l);
     const pct = st.total ? Math.round(st.unknown / st.total * 100) : 0;
     const thumb = l.video ? `style="background-image:url('https://i.ytimg.com/vi/${l.video}/mqdefault.jpg')"` : l.netflix ? 'style="background:#141414;color:#e50914"' : '';
     return `<div class="lcard" data-open="${l.id}">
       <div class="thumb" ${thumb}>${l.video ? '' : l.netflix ? 'N' : esc((l.title.match(/[A-Za-z0-9가-힣]/) || ['📄'])[0].toUpperCase())}
-        <div class="counts"><span><i class="dot" style="background:#8fb8ff"></i>${st.unknown}</span><span><i class="dot" style="background:#ffd966"></i>${st.lingqs}</span></div>${l.cues?.length ? `<span class="dur">${fmtLen(l.cues[l.cues.length - 1].t)}</span>` : ''}</div>
+        ${l.done ? '<span class="donemark">✓ 다 읽음</span>' : ''}<div class="counts"><span><i class="dot" style="background:#8fb8ff"></i>${st.unknown}</span><span><i class="dot" style="background:#ffd966"></i>${st.lingqs}</span></div>${l.cues?.length ? `<span class="dur">${fmtLen(l.cues[l.cues.length - 1].t)}</span>` : ''}</div>
       <div class="newbar"><i style="width:${100 - pct}%"></i></div>
       <div class="lbody"><b>${esc(l.title)}</b>
         <div class="lfoot"><span class="muted"><i class="dot" style="background:var(--new)"></i>새 단어 ${pct}%</span>
