@@ -128,6 +128,7 @@ td,th{padding:8px;border-bottom:1px solid var(--line);text-align:left;vertical-a
   #bPlay{width:46px;height:46px;border-radius:50%;padding:0;font-size:18px;background:var(--accent);border-color:var(--accent);color:#fff}
   #v-reader.paged #text{column-width:min(720px,calc(100vw - 68px));column-gap:40px;column-fill:auto;overflow:hidden;padding:0;margin:4px auto 0;width:min(720px,calc(100vw - 68px));border:0;border-radius:0;background:none}
   #v-reader.paged #phraseHint{display:none}
+  #v-reader.paged .reader{touch-action:pan-y} /* 옆으로 미는 동작은 브라우저가 가로채지 않게 (페이지 넘김용) */
   #v-reader.paged .pgnav{display:block;position:fixed;top:42%;z-index:3;border:0;background:none;color:var(--muted);font-size:34px;line-height:1;padding:10px 4px}
   #pgPrev{left:0}#pgNext{right:0}
   main{padding:12px 16px}
@@ -1508,9 +1509,12 @@ function turnPage(d) {
 }
 $('pgPrev').onclick = () => turnPage(-1);
 $('pgNext').onclick = () => turnPage(1);
+// 밀기는 리더 화면 어디서나 (아이패드는 본문 양옆 여백이 넓음) — 단어 창·재생 막대·아래 막대 위는 제외
 let swipe = null;
-$('text').addEventListener('touchstart', e => { swipe = { x: e.touches[0].clientX, y: e.touches[0].clientY }; }, { passive: true });
-$('text').addEventListener('touchend', e => {
+$('v-reader').addEventListener('touchstart', e => {
+  swipe = e.target.closest('#panel, .player, #bbar, #ytWrap, #rTop') ? null : { x: e.touches[0].clientX, y: e.touches[0].clientY };
+}, { passive: true });
+$('v-reader').addEventListener('touchend', e => {
   if (!swipe || !isPaged()) return;
   const dx = e.changedTouches[0].clientX - swipe.x, dy = e.changedTouches[0].clientY - swipe.y;
   swipe = null;
