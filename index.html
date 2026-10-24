@@ -117,18 +117,19 @@ td,th{padding:8px;border-bottom:1px solid var(--line);text-align:left;vertical-a
 /* ---------- 디자인: 애플 기본 앱 스타일 ---------- */
 /* 화면은 아이폰 기본 글꼴(SF), 읽는 글(스크립트·단어)은 Apple Books처럼 책 글꼴 */
 :root{
-  --bg:#f2f2f7;--bg-top:#f2f2f7;color-scheme:light;--edge:rgba(0,0,0,.06);--glass:rgba(255,255,255,.86);--glass-edge:rgba(255,255,255,.8);--glass-pill:rgba(0,0,0,.07);--glass-shadow:0 10px 30px rgba(0,0,0,.12),0 1px 3px rgba(0,0,0,.08);--lift:0 1px 2px rgba(0,0,0,.05),0 2px 8px rgba(0,0,0,.04);--card:#fff;--text:#000;--muted:#8a8a8e;--line:#d1d1d6;--accent:#007aff;--accent-soft:rgba(0,122,255,.12);
+  --bg:#f2f2f7;--bg-top:#f2f2f7;color-scheme:light;--edge:rgba(0,0,0,.06);--glass:rgba(255,255,255,.86);--glass-edge:rgba(255,255,255,.8);--glass-pill:rgba(0,0,0,.07);--glass-shadow:0 10px 30px rgba(0,0,0,.12),0 1px 3px rgba(0,0,0,.08);--surface:rgba(255,255,255,.72);--mesh:radial-gradient(60vmax 50vmax at 8% -5%,rgba(110,165,255,.42),transparent 62%),radial-gradient(55vmax 45vmax at 100% 18%,rgba(196,150,255,.36),transparent 62%),radial-gradient(60vmax 50vmax at 75% 105%,rgba(255,168,190,.34),transparent 62%),radial-gradient(50vmax 42vmax at -5% 92%,rgba(110,220,230,.30),transparent 62%);--lift:0 1px 2px rgba(0,0,0,.05),0 2px 8px rgba(0,0,0,.04);--card:#fff;--text:#000;--muted:#8a8a8e;--line:#d1d1d6;--accent:#007aff;--accent-soft:rgba(0,122,255,.12);
   --fill:rgba(118,118,128,.12);--bar:rgba(249,249,249,.94);
   --new:#dceaff;--l1:#ffd54a;--l2:#ffe17d;--l3:#ffecab;--l4:#fff6d8;--play:#e3f3ea;--ok:#34c759;--thumb:#8e8e93;
   --serif:"Literata",Georgia,"Times New Roman",serif;
 }
+@media (prefers-color-scheme:dark) and (max-width:800px), (prefers-color-scheme:dark) and (pointer:coarse) and (max-width:1400px){:root:not([data-theme=light]) #nav .ti svg{fill:currentColor;filter:none}}
 @media (prefers-color-scheme:dark){:root:not([data-theme=light]){
-  --bg:#000;--bg-top:#121214;color-scheme:dark;--edge:rgba(255,255,255,.1);--glass:rgba(38,38,42,.86);--glass-edge:rgba(255,255,255,.14);--glass-pill:rgba(255,255,255,.12);--glass-shadow:0 10px 30px rgba(0,0,0,.5);--lift:none;--card:#1c1c1e;--text:#fff;--muted:#8d8d93;--line:#38383a;--accent:#0a84ff;--accent-soft:rgba(10,132,255,.18);
+  --bg:#000;--bg-top:#121214;color-scheme:dark;--edge:rgba(255,255,255,.1);--glass:rgba(38,38,42,.86);--glass-edge:rgba(255,255,255,.14);--glass-pill:rgba(255,255,255,.12);--glass-shadow:0 10px 30px rgba(0,0,0,.5);--surface:rgba(28,28,30,.7);--mesh:radial-gradient(60vmax 50vmax at 5% -5%,rgba(40,90,255,.36),transparent 62%),radial-gradient(55vmax 45vmax at 105% 25%,rgba(140,60,255,.28),transparent 62%),radial-gradient(60vmax 50vmax at 80% 108%,rgba(255,55,140,.16),transparent 62%),radial-gradient(50vmax 42vmax at -8% 95%,rgba(0,170,200,.14),transparent 62%);--lift:none;--card:#1c1c1e;--text:#fff;--muted:#8d8d93;--line:#38383a;--accent:#0a84ff;--accent-soft:rgba(10,132,255,.18);
   --fill:rgba(118,118,128,.24);--bar:rgba(22,22,24,.94);
   --new:#173a6b;--l1:#7a5d0c;--l2:#634d14;--l3:#4d3f1a;--l4:#3a331f;--play:#17342a;--ok:#30d158;
 }}
 :root[data-theme=dark]{
-  --bg:#000;--bg-top:#121214;color-scheme:dark;--edge:rgba(255,255,255,.1);--glass:rgba(38,38,42,.86);--glass-edge:rgba(255,255,255,.14);--glass-pill:rgba(255,255,255,.12);--glass-shadow:0 10px 30px rgba(0,0,0,.5);--lift:none;--card:#1c1c1e;--text:#fff;--muted:#8d8d93;--line:#38383a;--accent:#0a84ff;--accent-soft:rgba(10,132,255,.18);
+  --bg:#000;--bg-top:#121214;color-scheme:dark;--edge:rgba(255,255,255,.1);--glass:rgba(38,38,42,.86);--glass-edge:rgba(255,255,255,.14);--glass-pill:rgba(255,255,255,.12);--glass-shadow:0 10px 30px rgba(0,0,0,.5);--surface:rgba(28,28,30,.7);--mesh:radial-gradient(60vmax 50vmax at 5% -5%,rgba(40,90,255,.36),transparent 62%),radial-gradient(55vmax 45vmax at 105% 25%,rgba(140,60,255,.28),transparent 62%),radial-gradient(60vmax 50vmax at 80% 108%,rgba(255,55,140,.16),transparent 62%),radial-gradient(50vmax 42vmax at -8% 95%,rgba(0,170,200,.14),transparent 62%);--lift:none;--card:#1c1c1e;--text:#fff;--muted:#8d8d93;--line:#38383a;--accent:#0a84ff;--accent-soft:rgba(10,132,255,.18);
   --fill:rgba(118,118,128,.24);--bar:rgba(22,22,24,.94);
   --new:#173a6b;--l1:#7a5d0c;--l2:#634d14;--l3:#4d3f1a;--l4:#3a331f;--play:#17342a;--ok:#30d158;
 }
@@ -186,6 +187,12 @@ h2{letter-spacing:-.02em}
 .flash .word{font-size:38px}
 th{font-size:13px;color:var(--muted);font-weight:500}
 td,th{border-bottom:.5px solid var(--line)}
+/* 배경: 아이폰 배경화면처럼 색이 번진 바탕 (밝게/어둡게 따로), 리더는 단색 */
+body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:var(--mesh)}
+body.reading::before{display:none}
+/* 카드: 반투명 유리 — 뒤 배경색이 살짝 비침 */
+.card,.lcard,.tile{background:var(--surface);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px)}
+#panel{background:var(--card)}
 /* 화면 전환: 부드럽게 들어옴 (리더는 페이지 계산 때문에 투명도만) */
 @keyframes viewIn{from{opacity:0;transform:translateY(10px)}}
 @keyframes fadeIn{from{opacity:0}}
@@ -226,7 +233,13 @@ main>section:not(.hidden):not(#v-reader){animation:viewIn .32s cubic-bezier(.2,.
   #nav button{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 0 6px;border-radius:26px;font-size:10.5px;font-weight:600;color:var(--text);position:relative;transition:background-color .2s,color .2s}
   #nav button.active{color:var(--accent);background:var(--glass-pill)}
   .ti{display:block;width:30px;height:30px}
-  .ti svg{display:block;width:100%;height:100%}
+  .ti svg{display:block;width:100%;height:100%;filter:drop-shadow(0 2px 2px rgba(0,0,0,.18)) drop-shadow(0 4px 6px rgba(0,0,0,.12));transition:transform .2s}
+  #nav [data-view=new] .ti svg{fill:url(#g-new)}
+  #nav [data-view=library] .ti svg{fill:url(#g-library)}
+  #nav [data-view=vocab] .ti svg{fill:url(#g-vocab)}
+  #nav [data-view=review] .ti svg{fill:url(#g-review)}
+  #nav [data-view=stats] .ti svg{fill:url(#g-stats)}
+  #nav button.active .ti svg{transform:translateY(-2px) scale(1.1);filter:drop-shadow(0 3px 3px rgba(0,0,0,.22)) drop-shadow(0 8px 10px rgba(0,0,0,.16))}
   #nav .badge{position:absolute;top:4px;left:calc(50% + 8px)}
   main{padding:8px 16px calc(110px + env(safe-area-inset-bottom))}
   #v-library h2{font-size:22px!important}
@@ -259,6 +272,7 @@ main>section:not(.hidden):not(#v-reader){animation:viewIn .32s cubic-bezier(.2,.
   #v-reader.paged .reader{touch-action:pan-y} /* 옆으로 미는 동작은 브라우저가 가로채지 않게 (페이지 넘김용) */
   #v-reader.paged .pgnav{display:block;position:fixed;top:42%;z-index:3;border:0;background:none;color:var(--muted);font-size:34px;line-height:1;padding:10px 4px}
   #pgPrev{left:0}#pgNext{right:0}
+  :root[data-theme=dark] #nav .ti svg{fill:currentColor;filter:none}
   .reader{grid-template-columns:1fr}
   #text{font-size:19px}
   #text.focus .sent.cur{font-size:22px}
@@ -279,6 +293,7 @@ main>section:not(.hidden):not(#v-reader){animation:viewIn .32s cubic-bezier(.2,.
 </head>
 <body>
 <header>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><linearGradient id="g-new" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffc15e"/><stop offset="1" stop-color="#ff7a00"/></linearGradient><linearGradient id="g-library" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6fd0ff"/><stop offset="1" stop-color="#0a64ff"/></linearGradient><linearGradient id="g-vocab" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7ee08f"/><stop offset="1" stop-color="#16a34a"/></linearGradient><linearGradient id="g-review" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d9a0ff"/><stop offset="1" stop-color="#8b3fe0"/></linearGradient><linearGradient id="g-stats" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff8fae"/><stop offset="1" stop-color="#ff2d55"/></linearGradient></defs></svg>
   <h1>My LingQ</h1>
   <nav id="nav">
     <button data-view="new"><span class="ti" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20Zm1 5h-2v4H7v2h4v4h2v-4h4v-2h-4V7Z"/></svg></span>새 레슨</button>
