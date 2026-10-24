@@ -126,7 +126,7 @@ td,th{padding:8px;border-bottom:1px solid var(--line);text-align:left;vertical-a
   .video{position:fixed;right:8px;top:auto!important;bottom:calc(72px + env(safe-area-inset-bottom) + var(--pb,110px));width:min(80vw,420px);max-height:none;margin:0;z-index:6;box-shadow:0 2px 14px rgba(0,0,0,.3)}
   #bbar{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:7;justify-content:space-between;align-items:center;padding:8px 16px;padding-bottom:max(8px,env(safe-area-inset-bottom));background:var(--card);border-top:1px solid var(--line)}
   #bPlay{width:46px;height:46px;border-radius:50%;padding:0;font-size:18px;background:var(--accent);border-color:var(--accent);color:#fff}
-  #v-reader.paged #text{columns:1;column-gap:40px;column-fill:auto;overflow:hidden;padding:0;margin:4px auto 0;width:min(720px,calc(100vw - 68px));border:0;border-radius:0;background:none}
+  #v-reader.paged #text{column-width:min(720px,calc(100vw - 68px));column-gap:40px;column-fill:auto;overflow:hidden;padding:0;margin:4px auto 0;width:min(720px,calc(100vw - 68px));border:0;border-radius:0;background:none}
   #v-reader.paged #phraseHint{display:none}
   #v-reader.paged .pgnav{display:block;position:fixed;top:42%;z-index:3;border:0;background:none;color:var(--muted);font-size:34px;line-height:1;padding:10px 4px}
   #pgPrev{left:0}#pgNext{right:0}
@@ -1112,6 +1112,7 @@ $('text').addEventListener('pointerdown', e => {
   if (!drag.active) drag.timer = setTimeout(() => {
     if (!drag) return;
     drag.active = true;
+    swipe = null; // 구간 드래그 중에는 페이지 넘김(밀기)으로 보지 않음
     paintDrag(drag.range);
     navigator.vibrate?.(10);
   }, 250);
@@ -1478,9 +1479,11 @@ $('viewToggle').onclick = () => {
 let page = 0;
 const isPaged = () => isTouchLayout() && !settings.focus && settings.cc;
 const pageStep = () => $('text').clientWidth + 40; // 40 = column-gap
-const pageCount = () => Math.max(1, Math.round($('text').scrollWidth / pageStep()));
-function pageOf(i) {
-  const r = document.querySelector(`#text .sent[data-i="${i}"]`)?.getClientRects()[0];
+// 사파리는 넘친 단을 scrollWidth에 넣지 않아서, 마지막 문장이 있는 단으로 페이지 수를 셈
+const pageCount = () => sentences.length ? pageOf(sentences.length - 1, true) + 1 : 1;
+function pageOf(i, end = false) {
+  const rs = document.querySelector(`#text .sent[data-i="${i}"]`)?.getClientRects();
+  const r = rs?.[end ? rs.length - 1 : 0];
   return r ? Math.floor((r.left - $('text').getBoundingClientRect().left + $('text').scrollLeft) / pageStep()) : 0;
 }
 function showPage(p) {
