@@ -116,13 +116,13 @@ td,th{padding:8px;border-bottom:1px solid var(--line);text-align:left;vertical-a
 /* ---------- 디자인: 잉크와 종이 ---------- */
 /* 화면은 Pretendard, 읽는 글(스크립트·단어)은 책 글꼴 Literata */
 :root{
-  --bg:#eef1f5;--card:#fff;--text:#1a2232;--muted:#667085;--line:#dfe4ec;--accent:#2b4acb;--accent-soft:#e8edfc;--ink:#16213a;
+  --bg:#f8f9fd;--glow1:rgba(122,162,255,.38);--glow2:rgba(196,170,255,.28);--glow3:rgba(255,214,90,.42);--card:#fff;--text:#1a2232;--muted:#667085;--line:#dfe4ec;--accent:#2b4acb;--accent-soft:#e8edfc;--ink:#16213a;
   --new:#e5edff;--l1:#ffd54a;--l2:#ffe17d;--l3:#ffecab;--l4:#fff6d8;--play:#e3f3ea;--ok:#1d9a68;--thumb:#24325c;
   --shadow:0 1px 2px rgba(22,33,58,.05),0 6px 20px rgba(22,33,58,.07);
   --serif:"Literata",Georgia,"Times New Roman",serif;
 }
 @media (prefers-color-scheme:dark){:root{
-  --bg:#0e131d;--card:#161d2a;--text:#e6eaf2;--muted:#8e98ab;--line:#263042;--accent:#86a2ff;--accent-soft:#1d2945;--ink:#0a0f19;
+  --bg:#0e131d;--glow1:rgba(80,120,255,.22);--glow2:rgba(150,110,255,.14);--glow3:rgba(255,200,60,.10);--card:#161d2a;--text:#e6eaf2;--muted:#8e98ab;--line:#263042;--accent:#86a2ff;--accent-soft:#1d2945;--ink:#0a0f19;
   --new:#1d3260;--l1:#7a5d0c;--l2:#634d14;--l3:#4d3f1a;--l4:#3a331f;--play:#17342a;--shadow:0 1px 2px rgba(0,0,0,.3),0 6px 20px rgba(0,0,0,.25);
 }
   button.primary,#bPlay{color:#0b1020}
@@ -138,10 +138,9 @@ input,textarea,select{border-radius:10px}
 input:focus,textarea:focus{border-color:var(--accent)}
 /* 배경: 왼쪽 위 잉크 파랑 + 오른쪽 아래 형광펜 노랑이 은은하게 (스크롤해도 고정) */
 body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:
-  radial-gradient(circle,color-mix(in srgb,var(--text) 9%,transparent) 1px,transparent 1.4px) 0 0/22px 22px,
-  radial-gradient(70vmax 55vmax at -5% -10%,color-mix(in srgb,var(--accent) 30%,transparent),transparent 70%),
-  radial-gradient(60vmax 50vmax at 105% 105%,color-mix(in srgb,var(--l1) 50%,transparent),transparent 70%),
-  radial-gradient(45vmax 35vmax at 90% 10%,color-mix(in srgb,var(--accent) 12%,transparent),transparent 70%)}
+  radial-gradient(60vmax 45vmax at 0% 0%,var(--glow1),transparent 65%),
+  radial-gradient(50vmax 40vmax at 100% 30%,var(--glow2),transparent 65%),
+  radial-gradient(60vmax 45vmax at 80% 100%,var(--glow3),transparent 65%)}
 body.reading::before{display:none}
 /* 위 메뉴: 짙은 남색 막대, 지금 보는 메뉴는 밝게 */
 header{background:linear-gradient(100deg,var(--ink) 40%,color-mix(in srgb,var(--ink) 78%,var(--accent)));border-bottom:0;color:#fff;gap:10px;padding-left:24px;padding-right:24px}
@@ -163,7 +162,7 @@ h2{letter-spacing:-.02em}
 .lcard{border:0;border-radius:14px;box-shadow:var(--shadow);transition:transform .18s,box-shadow .18s}
 .lcard:hover{transform:translateY(-2px);box-shadow:0 2px 4px rgba(22,33,58,.06),0 12px 28px rgba(22,33,58,.12)}
 .thumb{background-color:var(--thumb);font-family:var(--serif);font-weight:500}
-.thumb::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 45%,rgba(10,15,25,.55))}
+.thumb::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 62%,rgba(10,15,25,.3))}
 .counts{z-index:1}
 .donemark{position:absolute;left:8px;top:8px;z-index:1;background:var(--ok);color:#fff;font:600 12px/20px "Pretendard Variable",Pretendard,sans-serif;padding:0 8px;border-radius:6px}
 .dur{position:absolute;right:8px;bottom:8px;z-index:1;font-family:"Pretendard Variable",Pretendard,sans-serif;background:rgba(10,15,25,.72);color:#fff;font-size:12px;font-weight:600;line-height:20px;padding:0 7px;border-radius:6px}
@@ -608,6 +607,9 @@ document.querySelectorAll('[data-lf]').forEach(b => b.onclick = () => {
 });
 // 영상 길이: 마지막 자막 시각 기준 (올림한 분)
 const fmtLen = t => { const m = Math.max(1, Math.ceil(t / 60)); return m < 60 ? `${m}분` : `${Math.floor(m / 60)}시간${m % 60 ? ` ${m % 60}분` : ''}`; };
+// 글 레슨 표지: 제목으로 색 조합을 골라 레슨마다 다른 색 (같은 제목은 항상 같은 색)
+const COVERS = ['#4f6bed,#8fb3ff', '#7b5cf0,#d39bff', '#0f9b8e,#6fdcc0', '#e0679a,#ffb39a', '#f08a24,#ffd166', '#3a7bd5,#00d2d3'];
+const coverOf = t => { let h = 0; for (const c of t) h = (h * 31 + c.charCodeAt(0)) >>> 0; return `linear-gradient(135deg,${COVERS[h % COVERS.length]})`; };
 function renderLibrary() {
   const list = $('lessonList');
   if (!lessons.length) { list.innerHTML = '<div class="card" style="text-align:center"><p>아직 레슨이 없어요.</p><button class="primary" onclick="show(\'new\')">＋ 새 레슨 만들기</button></div>'; $('libCount').textContent = ''; return; }
@@ -618,7 +620,7 @@ function renderLibrary() {
   list.innerHTML = '<div class="grid">' + recent.map(l => {
     const st = lessonStats(l);
     const pct = st.total ? Math.round(st.unknown / st.total * 100) : 0;
-    const thumb = l.video ? `style="background-image:url('https://i.ytimg.com/vi/${l.video}/mqdefault.jpg')"` : l.netflix ? 'style="background:#141414;color:#e50914"' : '';
+    const thumb = l.video ? `style="background-image:url('https://i.ytimg.com/vi/${l.video}/mqdefault.jpg')"` : l.netflix ? 'style="background:#141414;color:#e50914"' : `style="background:${coverOf(l.title)}"`;
     return `<div class="lcard" data-open="${l.id}">
       <div class="thumb" ${thumb}>${l.video ? '' : l.netflix ? 'N' : esc((l.title.match(/[A-Za-z0-9가-힣]/) || ['📄'])[0].toUpperCase())}
         ${l.done ? '<span class="donemark">✓ 다 읽음</span>' : ''}<div class="counts"><span><i class="dot" style="background:#8fb8ff"></i>${st.unknown}</span><span><i class="dot" style="background:#ffd966"></i>${st.lingqs}</span></div>${l.cues?.length ? `<span class="dur">${fmtLen(l.cues[l.cues.length - 1].t)}</span>` : ''}</div>
