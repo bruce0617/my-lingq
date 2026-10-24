@@ -108,7 +108,28 @@ main{max-width:1100px;margin:0 auto;padding:16px}
 .tile b{display:block;font-size:28px}
 table{width:100%;border-collapse:collapse}
 td,th{padding:8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+#pbClose,.pgnav,#bbar{display:none}
 @media (max-width:800px){
+  /* 아이폰 리더: LingQ처럼 스크립트가 화면을 채우고, 영상·재생 막대는 ▶를 누를 때만 아래에 뜸 */
+  body.reading header{display:none}
+  body.reading main{padding:0 0 calc(64px + env(safe-area-inset-bottom))}
+  #rTop{flex-wrap:nowrap;margin:0!important;padding:8px 12px;padding-top:max(8px,env(safe-area-inset-top))}
+  #rTop b{min-width:0!important;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #rTop button{padding:4px 9px;flex:none}
+  #pageInfo{white-space:nowrap}
+  .lbl{display:none}
+  .readtop{position:static;padding:0}
+  body:not(.pbar) .readtop .player{display:none}
+  .readtop .player{position:fixed;left:8px;right:8px;bottom:calc(64px + env(safe-area-inset-bottom));z-index:6;margin:0;box-shadow:0 -2px 14px rgba(0,0,0,.18)}
+  #videoToggle,#viewToggle,#sentPos{display:none!important}
+  #pbClose{display:inline-block;margin-left:auto}
+  .video{position:fixed;right:8px;top:auto!important;bottom:calc(72px + env(safe-area-inset-bottom) + var(--pb,110px));width:min(80vw,420px);max-height:none;margin:0;z-index:6;box-shadow:0 2px 14px rgba(0,0,0,.3)}
+  #bbar{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:7;justify-content:space-between;align-items:center;padding:8px 16px;padding-bottom:max(8px,env(safe-area-inset-bottom));background:var(--card);border-top:1px solid var(--line)}
+  #bPlay{width:46px;height:46px;border-radius:50%;padding:0;font-size:18px;background:var(--accent);border-color:var(--accent);color:#fff}
+  #v-reader.paged #text{columns:1;column-gap:40px;column-fill:auto;overflow:hidden;padding:0;margin:4px 34px 0;border:0;border-radius:0;background:none}
+  #v-reader.paged #phraseHint{display:none}
+  #v-reader.paged .pgnav{display:block;position:fixed;top:42%;z-index:3;border:0;background:none;color:var(--muted);font-size:34px;line-height:1;padding:10px 4px}
+  #pgPrev{left:0}#pgNext{right:0}
   main{padding:12px 16px}
   .reader{grid-template-columns:1fr}
   #text{font-size:19px}
@@ -199,10 +220,11 @@ td,th{padding:8px;border-bottom:1px solid var(--line);text-align:left;vertical-a
 
   <!-- 리더 -->
   <section id="v-reader" class="hidden">
-    <div class="row" style="margin-bottom:8px">
-      <button data-view="library">← 서재</button>
+    <div class="row" id="rTop" style="margin-bottom:8px">
+      <button data-view="library">←<span class="lbl"> 서재</span></button>
       <b id="readerTitle" style="flex:1;min-width:120px"></b>
-      <button id="editLesson">✏️ 편집</button>
+      <span class="muted" id="pageInfo"></span>
+      <button id="editLesson">✏️<span class="lbl"> 편집</span></button>
       <button id="finishPage" class="primary" title="파란 단어를 모두 '아는 단어'로">✓ 다 읽었어요</button>
     </div>
     <div id="readTop" class="readtop">
@@ -223,6 +245,7 @@ td,th{padding:8px;border-bottom:1px solid var(--line);text-align:left;vertical-a
       <button id="ccToggle" title="자막 켜기/끄기"></button>
       <button id="viewToggle"></button>
       <span class="muted" id="sentPos"></span>
+      <button id="pbClose" title="재생 막대·영상 닫기">✕</button>
       <div class="row" style="width:100%;flex-wrap:nowrap">
         <div class="prog" id="prog" title="누르면 그 위치로 이동"><i id="progBar"></i></div>
         <span class="muted" id="progTime"></span>
@@ -276,6 +299,14 @@ td,th{padding:8px;border-bottom:1px solid var(--line);text-align:left;vertical-a
         <ol class="defs" id="pDefs"></ol>
         <div class="muted">단축키: 1–4 레벨 · K 아는 단어 · X 무시 · Esc 닫기 · Space 재생 · ←/→ 문장 이동</div>
       </div>
+    </div>
+    <!-- 아이폰: LingQ처럼 페이지 넘김 화살표 + 아래 막대 (재생 · 문장/페이지 · 복습) -->
+    <button id="pgPrev" class="pgnav" title="이전 페이지">‹</button>
+    <button id="pgNext" class="pgnav" title="다음 페이지">›</button>
+    <div id="bbar">
+      <button id="bPlay" title="재생 (영상은 이때 나타남)">▶</button>
+      <button id="bView"></button>
+      <button id="bReview" title="이 레슨의 저장 단어 · 누르면 복습">🃏 <span id="bCount"></span></button>
     </div>
   </section>
 
@@ -445,7 +476,8 @@ function setStatus(k, s) {
 // ---------- 화면 전환 ----------
 function show(view) {
   for (const v of ['library', 'new', 'reader', 'edit', 'vocab', 'review', 'stats']) $('v-' + v).classList.toggle('hidden', v !== view);
-  if (view !== 'reader') { stopPlay(); closePanel(); }
+  if (view !== 'reader') { stopPlay(); closePanel(); document.body.classList.remove('pbar'); }
+  layoutPages();
   if (view === 'library') renderLibrary();
   if (view === 'vocab') renderVocab();
   if (view === 'review') startReview();
@@ -652,15 +684,15 @@ async function fetchTranscriptApi(id) {
   if (!location.hostname.endsWith('github.io')) urls.push(`/api/transcript?v=${id}`);
   else urls.push(`${MAC_RELAY}?v=${id}`);
   if (TRANSCRIPT_API) urls.push(`${TRANSCRIPT_API}?v=${id}`);
-  let lastErr = '자막 서버가 아직 설정되지 않았어요';
+  let firstErr = null; // 집 Mac(주 경로) 오류를 보여줌 — 구글 서버의 '봇 확인' 오류는 원인을 가림
   for (const u of urls) {
     try {
       const j = await (await fetch(u)).json();
       if (j.cues?.length) return j;
-      lastErr = j.error || lastErr;
-    } catch { lastErr = '자막 서버에 연결하지 못했어요'; }
+      firstErr ??= j.error || '자막을 가져오지 못했어요';
+    } catch { firstErr ??= '집 Mac 자막 서버에 연결하지 못했어요 (Mac이 꺼져 있거나 잠자기 중, 또는 Tailscale Funnel이 꺼져 있을 수 있어요)'; }
   }
-  throw new Error(lastErr);
+  throw new Error(firstErr || '자막 서버가 아직 설정되지 않았어요');
 }
 // 주소를 넣으면 자막 자동 가져오기
 async function autoTranscript() {
@@ -676,7 +708,7 @@ async function autoTranscript() {
     $('newText').value = j.cues.map(c => `${fmtTime(c.t)} ${c.text}`).join('\n');
     status.textContent = `✅ 자막 ${j.cues.length}줄을 가져왔어요${j.auto ? ' (자동 생성 자막 — 틀린 부분은 아래에서 고치세요)' : ''}. '레슨 만들기'를 누르세요.`;
   } catch (e) {
-    status.innerHTML = `⚠️ 자동으로 못 가져왔어요: ${esc(e.message)}<br>유튜브에서 <b>…더보기 → 스크립트 표시</b> → 전체 복사 → 아래 칸에 붙여넣어도 돼요.`;
+    status.innerHTML = `⚠️ 자동으로 못 가져왔어요: ${esc(e.message)}<br>Mac 컴퓨터의 유튜브 웹에서 <b>…더보기 → 스크립트 표시</b> → 전체 복사 → 아래 칸에 붙여넣어도 돼요. (아이폰·아이패드 유튜브 앱은 스크립트 복사가 안 돼요)`;
     try {
       const r = await fetch(`https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`);
       if (r.ok && !$('newTitle').value.trim()) $('newTitle').value = (await r.json()).title || '';
@@ -1001,6 +1033,7 @@ function openLesson(id) {
   }
   playIdx = current.pos && current.pos < sentences.length ? current.pos : 0;
   settings.video = false; // 스크립트 먼저 공부 — 영상은 ▶ 재생이나 📺 버튼을 누를 때 나타남
+  document.body.classList.remove('pbar');
   markPhrases();
   if (current.video) mountVideo(current.video);
   closePanel();
@@ -1252,7 +1285,7 @@ async function loadDefinitions(k) {
 
 // ✓ 다 읽었어요: 파란 단어 → 아는 단어, 레슨은 서재의 "✓ 다 읽음"으로 / 다 읽은 레슨에서는 다시 "읽는 중"으로
 function updateFinishBtn() {
-  $('finishPage').textContent = current?.done ? '↩ 다시 읽는 중으로' : '✓ 다 읽었어요';
+  $('finishPage').innerHTML = current?.done ? '↩<span class="lbl"> 다시 읽는 중으로</span>' : '✓<span class="lbl"> 다 읽었어요</span>';
   $('finishPage').classList.toggle('primary', !current?.done);
 }
 $('finishPage').onclick = () => {
@@ -1367,16 +1400,24 @@ function updatePlayer() {
   }
   renderSentExtra();
   updateProgress();
+  $('bPlay').textContent = playing ? '⏸' : '▶';
+  $('bView').textContent = settings.focus ? '📄 페이지' : '🎯 문장';
+  const ks = new Set([...document.querySelectorAll('#text .w')].map(el => el.dataset.k));
+  $('bCount').textContent = [...ks].filter(k => isLearning(statusOf(k))).length;
+  layoutPages();
 }
 // 메뉴·재생 줄 높이를 CSS 변수로 (고정 영역 아래로 스크롤 위치 맞춤)
 const topBottom = () => document.querySelector('header').offsetHeight + $('readTop').offsetHeight;
-new ResizeObserver(() => {
+const ro = new ResizeObserver(() => {
   document.documentElement.style.setProperty('--hh', document.querySelector('header').offsetHeight + 'px');
   document.documentElement.style.setProperty('--rt', $('readTop').offsetHeight + 'px');
-}).observe(document.body);
+  document.documentElement.style.setProperty('--pb', $('pPlay').closest('.player').offsetHeight + 'px');
+});
+ro.observe(document.body);
+ro.observe($('pPlay').closest('.player')); // 아이폰: 재생 막대가 나타날 때 영상 위치 다시 맞춤
 // 현재 문장으로 스크롤 (문장 보기는 항상 화면에 있어 필요 없음)
 function scrollToCurrent() {
-  if (settings.focus) return;
+  if (settings.focus || isPaged()) return;
   const el = document.querySelector(`#text .sent[data-i="${playIdx}"]`);
   if (!el) return;
   const top = topBottom(); // 고정 영역 아래 보이는 부분의 1/3 지점에
@@ -1428,6 +1469,61 @@ $('viewToggle').onclick = () => {
   settings.focus = !settings.focus; saveSettings();
   updatePlayer(); scrollToCurrent();
 };
+
+// ---------- 아이폰 페이지 보기 (LingQ처럼 스크립트를 페이지 단위로 넘김) ----------
+// 스크립트 칸 높이를 화면에 맞추고 CSS 다단(columns)으로 흘려서, 한 단 = 한 페이지
+let page = 0;
+const isPaged = () => innerWidth <= 800 && !settings.focus && settings.cc;
+const pageStep = () => $('text').clientWidth + 40; // 40 = column-gap
+const pageCount = () => Math.max(1, Math.round($('text').scrollWidth / pageStep()));
+function pageOf(i) {
+  const r = document.querySelector(`#text .sent[data-i="${i}"]`)?.getClientRects()[0];
+  return r ? Math.floor((r.left - $('text').getBoundingClientRect().left + $('text').scrollLeft) / pageStep()) : 0;
+}
+function showPage(p) {
+  page = Math.max(0, Math.min(pageCount() - 1, p));
+  $('text').scrollLeft = page * pageStep();
+  $('pageInfo').textContent = `${page + 1} / ${pageCount()}`;
+}
+function layoutPages() {
+  const v = $('v-reader'), reading = innerWidth <= 800 && !v.classList.contains('hidden');
+  document.body.classList.toggle('reading', reading);
+  v.classList.toggle('paged', reading && isPaged());
+  if (!v.classList.contains('paged')) { $('text').style.height = ''; $('pageInfo').textContent = ''; return; }
+  const t = $('text');
+  t.style.height = Math.max(200, innerHeight - (t.getBoundingClientRect().top + scrollY) - $('bbar').offsetHeight - 12) + 'px';
+  showPage(pageOf(playIdx));
+}
+// 페이지를 넘기면 그 페이지 첫 문장이 지금 위치 (▶는 여기서 재생, 다음에 열면 여기부터)
+function turnPage(d) {
+  showPage(page + d);
+  const i = sentences.findIndex((_, j) => pageOf(j) === page);
+  if (i >= 0) gotoSent(i);
+}
+$('pgPrev').onclick = () => turnPage(-1);
+$('pgNext').onclick = () => turnPage(1);
+let swipe = null;
+$('text').addEventListener('touchstart', e => { swipe = { x: e.touches[0].clientX, y: e.touches[0].clientY }; }, { passive: true });
+$('text').addEventListener('touchend', e => {
+  if (!swipe || !isPaged()) return;
+  const dx = e.changedTouches[0].clientX - swipe.x, dy = e.changedTouches[0].clientY - swipe.y;
+  swipe = null;
+  if (Math.abs(dx) > 50 && Math.abs(dx) > 1.5 * Math.abs(dy)) turnPage(dx < 0 ? 1 : -1);
+});
+addEventListener('resize', layoutPages);
+$('bPlay').onclick = () => {
+  if (current?.netflix) return $('nfOpen').click();
+  document.body.classList.add('pbar');
+  $('pPlay').click();
+};
+$('pbClose').onclick = () => {
+  stopPlay();
+  settings.video = false;
+  document.body.classList.remove('pbar');
+  updatePlayer();
+};
+$('bView').onclick = () => $('viewToggle').click();
+$('bReview').onclick = () => show('review');
 
 // ---------- 키보드 단축키 ----------
 document.addEventListener('keydown', e => {
