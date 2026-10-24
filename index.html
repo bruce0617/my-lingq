@@ -230,18 +230,18 @@ main>section:not(.hidden):not(#v-reader){animation:viewIn .32s cubic-bezier(.2,.
   /* 아래 탭: 화면 위에 떠 있는 유리 캡슐 (iOS 26), 고른 탭은 파란 아이콘 + 유리 하이라이트 */
   #nav{position:fixed;left:14px;right:14px;bottom:max(12px,env(safe-area-inset-bottom));z-index:8;justify-content:space-around;gap:2px;padding:6px;border-radius:32px;
     background:var(--glass);backdrop-filter:saturate(180%) blur(24px);-webkit-backdrop-filter:saturate(180%) blur(24px);border:.5px solid var(--glass-edge);box-shadow:var(--glass-shadow)}
-  #nav button{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 0 6px;border-radius:26px;font-size:10.5px;font-weight:600;color:var(--text);position:relative;transition:background-color .2s,color .2s}
+  #nav button{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 0 6px;min-width:0;border-radius:26px;font-size:10.5px;font-weight:600;color:var(--text);position:relative;transition:background-color .2s,color .2s}
   #nav button.active{color:var(--accent);background:var(--glass-pill)}
-  .ti{display:block;width:30px;height:30px}
+  .ti{display:block;width:60px;height:60px}
   .ti svg{display:block;width:100%;height:100%;filter:drop-shadow(0 2px 2px rgba(0,0,0,.18)) drop-shadow(0 4px 6px rgba(0,0,0,.12));transition:transform .2s}
   #nav [data-view=new] .ti svg{fill:url(#g-new)}
   #nav [data-view=library] .ti svg{fill:url(#g-library)}
   #nav [data-view=vocab] .ti svg{fill:url(#g-vocab)}
   #nav [data-view=review] .ti svg{fill:url(#g-review)}
   #nav [data-view=stats] .ti svg{fill:url(#g-stats)}
-  #nav button.active .ti svg{transform:translateY(-2px) scale(1.1);filter:drop-shadow(0 3px 3px rgba(0,0,0,.22)) drop-shadow(0 8px 10px rgba(0,0,0,.16))}
-  #nav .badge{position:absolute;top:4px;left:calc(50% + 8px)}
-  main{padding:8px 16px calc(110px + env(safe-area-inset-bottom))}
+  #nav button.active .ti svg{transform:translateY(-3px) scale(1.06);filter:drop-shadow(0 3px 3px rgba(0,0,0,.22)) drop-shadow(0 8px 10px rgba(0,0,0,.16))}
+  #nav .badge{position:absolute;top:4px;left:calc(50% + 18px)}
+  main{padding:8px 16px calc(140px + env(safe-area-inset-bottom))}
   #v-library h2{font-size:22px!important}
   .tabs{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin-left:0!important}
   .tabs::-webkit-scrollbar{display:none}
@@ -1927,7 +1927,7 @@ const setSync = t => { $('syncStatus').textContent = t; };
 // 잠깐 떴다 사라지는 알림
 function toast(msg) {
   const el = Object.assign(document.createElement('div'), { textContent: msg });
-  Object.assign(el.style, { position: 'fixed', left: '50%', bottom: 'calc(118px + env(safe-area-inset-bottom))', transform: 'translateX(-50%)',
+  Object.assign(el.style, { position: 'fixed', left: '50%', bottom: 'calc(140px + env(safe-area-inset-bottom))', transform: 'translateX(-50%)',
     background: 'rgba(30,30,30,.92)', color: '#fff', padding: '10px 16px', borderRadius: '20px', fontSize: '15px', zIndex: 50, maxWidth: '90vw' });
   document.body.appendChild(el);
   setTimeout(() => el.remove(), 3500);
