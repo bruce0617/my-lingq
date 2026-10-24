@@ -117,18 +117,18 @@ td,th{padding:8px;border-bottom:1px solid var(--line);text-align:left;vertical-a
 /* ---------- 디자인: 애플 기본 앱 스타일 ---------- */
 /* 화면은 아이폰 기본 글꼴(SF), 읽는 글(스크립트·단어)은 Apple Books처럼 책 글꼴 */
 :root{
-  --bg:#f2f2f7;--bg-top:#f2f2f7;color-scheme:light;--edge:rgba(0,0,0,.06);--lift:0 1px 2px rgba(0,0,0,.05),0 2px 8px rgba(0,0,0,.04);--card:#fff;--text:#000;--muted:#8a8a8e;--line:#d1d1d6;--accent:#007aff;--accent-soft:rgba(0,122,255,.12);
+  --bg:#f2f2f7;--bg-top:#f2f2f7;color-scheme:light;--edge:rgba(0,0,0,.06);--glass:rgba(255,255,255,.86);--glass-edge:rgba(255,255,255,.8);--glass-pill:rgba(0,0,0,.07);--glass-shadow:0 10px 30px rgba(0,0,0,.12),0 1px 3px rgba(0,0,0,.08);--lift:0 1px 2px rgba(0,0,0,.05),0 2px 8px rgba(0,0,0,.04);--card:#fff;--text:#000;--muted:#8a8a8e;--line:#d1d1d6;--accent:#007aff;--accent-soft:rgba(0,122,255,.12);
   --fill:rgba(118,118,128,.12);--bar:rgba(249,249,249,.94);
   --new:#dceaff;--l1:#ffd54a;--l2:#ffe17d;--l3:#ffecab;--l4:#fff6d8;--play:#e3f3ea;--ok:#34c759;--thumb:#8e8e93;
   --serif:"Literata",Georgia,"Times New Roman",serif;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme=light]){
-  --bg:#000;--bg-top:#121214;color-scheme:dark;--edge:rgba(255,255,255,.1);--lift:none;--card:#1c1c1e;--text:#fff;--muted:#8d8d93;--line:#38383a;--accent:#0a84ff;--accent-soft:rgba(10,132,255,.18);
+  --bg:#000;--bg-top:#121214;color-scheme:dark;--edge:rgba(255,255,255,.1);--glass:rgba(38,38,42,.86);--glass-edge:rgba(255,255,255,.14);--glass-pill:rgba(255,255,255,.12);--glass-shadow:0 10px 30px rgba(0,0,0,.5);--lift:none;--card:#1c1c1e;--text:#fff;--muted:#8d8d93;--line:#38383a;--accent:#0a84ff;--accent-soft:rgba(10,132,255,.18);
   --fill:rgba(118,118,128,.24);--bar:rgba(22,22,24,.94);
   --new:#173a6b;--l1:#7a5d0c;--l2:#634d14;--l3:#4d3f1a;--l4:#3a331f;--play:#17342a;--ok:#30d158;
 }}
 :root[data-theme=dark]{
-  --bg:#000;--bg-top:#121214;color-scheme:dark;--edge:rgba(255,255,255,.1);--lift:none;--card:#1c1c1e;--text:#fff;--muted:#8d8d93;--line:#38383a;--accent:#0a84ff;--accent-soft:rgba(10,132,255,.18);
+  --bg:#000;--bg-top:#121214;color-scheme:dark;--edge:rgba(255,255,255,.1);--glass:rgba(38,38,42,.86);--glass-edge:rgba(255,255,255,.14);--glass-pill:rgba(255,255,255,.12);--glass-shadow:0 10px 30px rgba(0,0,0,.5);--lift:none;--card:#1c1c1e;--text:#fff;--muted:#8d8d93;--line:#38383a;--accent:#0a84ff;--accent-soft:rgba(10,132,255,.18);
   --fill:rgba(118,118,128,.24);--bar:rgba(22,22,24,.94);
   --new:#173a6b;--l1:#7a5d0c;--l2:#634d14;--l3:#4d3f1a;--l4:#3a331f;--play:#17342a;--ok:#30d158;
 }
@@ -186,6 +186,32 @@ h2{letter-spacing:-.02em}
 .flash .word{font-size:38px}
 th{font-size:13px;color:var(--muted);font-weight:500}
 td,th{border-bottom:.5px solid var(--line)}
+/* 화면 전환: 부드럽게 들어옴 (리더는 페이지 계산 때문에 투명도만) */
+@keyframes viewIn{from{opacity:0;transform:translateY(10px)}}
+@keyframes fadeIn{from{opacity:0}}
+@keyframes sheetUp{from{transform:translateY(100%)}}
+main>section:not(.hidden):not(#v-reader){animation:viewIn .32s cubic-bezier(.2,.8,.2,1)}
+#v-reader:not(.hidden){animation:fadeIn .25s ease-out}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+/* 설정 앱 같은 목록 카드 */
+.card.list{padding:0;overflow:hidden}
+.card.list button{display:flex;width:100%;align-items:center;justify-content:space-between;background:none;border-radius:0;padding:14px 16px;font-size:16px;text-align:left}
+.card.list button+button{border-top:.5px solid var(--line)}
+.card.list button::after{content:"›";color:var(--muted);font-size:22px;line-height:1}
+/* 복습 */
+[data-rn]{min-width:84px;padding:12px 0;font-size:17px;border-radius:14px}
+.flash{padding:36px 20px}
+.flash .row button{padding:12px 22px;font-size:17px;border-radius:14px}
+.flash .meaning{font-weight:600}
+.flash .word button{background:none;font-size:22px;padding:4px 6px;vertical-align:middle}
+/* 통계: 건강 앱처럼 숫자마다 색 */
+.tile b{font-variant-numeric:tabular-nums}
+.tile:nth-child(1) b{color:#0a84ff}.tile:nth-child(2) b{color:#ff9f0a}.tile:nth-child(3) b{color:#30b158}
+.tile:nth-child(4) b{color:#bf5af2}.tile:nth-child(5) b{color:#ff375f}.tile:nth-child(6) b{color:#ff6b00}
+/* 단어장 */
+.vrow{border-bottom:.5px solid var(--line);padding:12px 0}
+.vrow:last-child{border-bottom:0}
+.vrow .status button,#panel .status button{min-width:36px;height:36px;padding:0 10px;border-radius:18px}
 #bbar{background:var(--bar);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);border-top:.5px solid var(--line)}
 @media (max-width:800px), (pointer:coarse) and (max-width:1400px){ /* 아이폰 + 아이패드(터치) */
   /* 아이폰 기본 앱처럼: 위는 큰 제목, 메뉴는 아래 탭 막대 */
@@ -193,30 +219,26 @@ td,th{border-bottom:.5px solid var(--line)}
   header h1{font-size:32px;font-weight:700;margin:0;letter-spacing:-.03em}
   header .stat{display:none}
   #themeBtn{margin-left:auto}
-  #authBtn{background:var(--fill);border-radius:16px;padding:5px 14px}
-  #nav{position:fixed;left:0;right:0;bottom:0;z-index:8;justify-content:space-around;gap:0;padding:6px 4px;padding-bottom:max(6px,env(safe-area-inset-bottom));background:var(--bar);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);border-top:.5px solid var(--line)}
-  #nav button{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:4px 0 0;font-size:11px;position:relative}
-  /* 탭 아이콘: 아이폰 앱 아이콘처럼 색 타일 + 광택 + 그림자, 고른 탭만 선명하게 떠오름 */
-  .ti{display:grid;place-items:center;width:52px;height:52px;border-radius:14px;font-size:30px;line-height:1;position:relative;
-    background:linear-gradient(180deg,var(--t1),var(--t2));
-    box-shadow:inset 0 1px 0 rgba(255,255,255,.55),inset 0 -3px 6px rgba(0,0,0,.18),0 4px 10px rgba(0,0,0,.18);
-    filter:saturate(.35);opacity:.55;transform:scale(.86);transition:transform .2s,opacity .2s,filter .2s}
-  .ti::after{content:"";position:absolute;inset:2px 3px 50%;border-radius:12px 12px 40% 40%;background:linear-gradient(180deg,rgba(255,255,255,.45),rgba(255,255,255,0))}
-  #nav button.active .ti{filter:none;opacity:1;transform:translateY(-4px) scale(1.04);box-shadow:inset 0 1px 0 rgba(255,255,255,.6),inset 0 -3px 6px rgba(0,0,0,.2),0 8px 18px rgba(0,0,0,.28)}
-  #nav button.active{font-weight:700;background:none}
-  #nav [data-view=new]{--t1:#ffb340;--t2:#ff7a00}
-  #nav [data-view=library]{--t1:#64c8ff;--t2:#0a6cff}
-  #nav [data-view=vocab]{--t1:#5fe07a;--t2:#1fa64a}
-  #nav [data-view=review]{--t1:#d58cff;--t2:#8e3fe0}
-  #nav [data-view=stats]{--t1:#ff7a9a;--t2:#ff2d55}
-  #nav .badge{position:absolute;top:0;left:calc(50% + 14px);z-index:2}
-  main{padding:8px 16px calc(120px + env(safe-area-inset-bottom))}
+  #authBtn,#themeBtn{background:var(--glass);border:.5px solid var(--edge);border-radius:18px;padding:6px 14px;box-shadow:var(--lift)}
+  /* 아래 탭: 화면 위에 떠 있는 유리 캡슐 (iOS 26), 고른 탭은 파란 아이콘 + 유리 하이라이트 */
+  #nav{position:fixed;left:14px;right:14px;bottom:max(12px,env(safe-area-inset-bottom));z-index:8;justify-content:space-around;gap:2px;padding:6px;border-radius:32px;
+    background:var(--glass);backdrop-filter:saturate(180%) blur(24px);-webkit-backdrop-filter:saturate(180%) blur(24px);border:.5px solid var(--glass-edge);box-shadow:var(--glass-shadow)}
+  #nav button{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 0 6px;border-radius:26px;font-size:10.5px;font-weight:600;color:var(--text);position:relative;transition:background-color .2s,color .2s}
+  #nav button.active{color:var(--accent);background:var(--glass-pill)}
+  .ti{display:block;width:30px;height:30px}
+  .ti svg{display:block;width:100%;height:100%}
+  #nav .badge{position:absolute;top:4px;left:calc(50% + 8px)}
+  main{padding:8px 16px calc(110px + env(safe-area-inset-bottom))}
   #v-library h2{font-size:22px!important}
-  #v-library .tabs{margin-left:0!important}
+  .tabs{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin-left:0!important}
+  .tabs::-webkit-scrollbar{display:none}
+  .tabs button{flex:none}
+  .tabs>b{display:none}
+  #v-library .tabs{width:calc(100% + 32px);margin:0 -16px!important;padding:0 16px 2px}
   body.reading{background:var(--card)}
   /* 아이폰 리더: LingQ처럼 스크립트가 화면을 채우고, 영상·재생 막대는 ▶를 누를 때만 아래에 뜸 */
   body.reading header{display:none}
-  body.reading main{padding:0 0 calc(64px + env(safe-area-inset-bottom))}
+  body.reading main{padding:0 0 calc(96px + env(safe-area-inset-bottom))}
   #rTop{flex-wrap:nowrap;margin:0!important;padding:8px 12px;padding-top:max(8px,env(safe-area-inset-top))}
   #rTop b{min-width:0!important;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   #rTop button{padding:4px 9px;flex:none}
@@ -224,19 +246,19 @@ td,th{border-bottom:.5px solid var(--line)}
   .lbl{display:none}
   .readtop{position:static;padding:0}
   body:not(.pbar) .readtop .player{display:none}
-  .readtop .player{position:fixed;left:8px;right:8px;bottom:calc(64px + env(safe-area-inset-bottom));z-index:6;margin:0;box-shadow:0 -2px 14px rgba(0,0,0,.18)}
+  .readtop .player{position:fixed;left:12px;right:12px;bottom:calc(max(12px,env(safe-area-inset-bottom)) + 72px);z-index:6;margin:0;border-radius:20px;background:color-mix(in srgb,var(--card) 94%,transparent);backdrop-filter:saturate(180%) blur(24px);-webkit-backdrop-filter:saturate(180%) blur(24px);border:.5px solid var(--glass-edge);box-shadow:var(--glass-shadow)}
   #videoToggle,#viewToggle,#sentPos{display:none!important}
   #pbClose{display:inline-block;margin-left:auto}
-  .video{position:fixed;right:8px;top:auto!important;bottom:calc(72px + env(safe-area-inset-bottom) + var(--pb,110px));width:min(80vw,420px);max-height:none;margin:0;z-index:6;box-shadow:0 2px 14px rgba(0,0,0,.3)}
-  #bbar{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:7;justify-content:space-between;align-items:center;padding:8px 16px;padding-bottom:max(8px,env(safe-area-inset-bottom));background:var(--card);border-top:1px solid var(--line)}
-  #bPlay{width:46px;height:46px;border-radius:50%;padding:0;font-size:18px;background:var(--accent);border-color:var(--accent);color:#fff}
+  .video{position:fixed;right:8px;top:auto!important;bottom:calc(max(12px,env(safe-area-inset-bottom)) + 80px + var(--pb,110px));width:min(80vw,420px);max-height:none;margin:0;z-index:6;border-radius:16px;box-shadow:var(--glass-shadow)}
+  #bbar{display:flex;position:fixed;left:14px;right:14px;bottom:max(12px,env(safe-area-inset-bottom));z-index:7;justify-content:space-between;align-items:center;padding:6px;border-radius:32px;background:var(--glass);backdrop-filter:saturate(180%) blur(24px);-webkit-backdrop-filter:saturate(180%) blur(24px);border:.5px solid var(--glass-edge);box-shadow:var(--glass-shadow)}
+  #bView,#bReview{background:var(--glass-pill);border-radius:22px;padding:10px 16px}
+  #bPlay{width:48px;height:48px;border-radius:50%;padding:0;font-size:18px;background:var(--accent);color:#fff;box-shadow:0 4px 12px color-mix(in srgb,var(--accent) 45%,transparent)}
   #v-reader.paged #text{column-width:min(720px,calc(100vw - 68px));column-gap:40px;column-fill:auto;overflow:hidden;padding:0;margin:4px auto 0;width:min(720px,calc(100vw - 68px));border:0;border-radius:0;background:none}
   #v-reader.paged #phraseHint{display:none}
   #v-reader.paged #text{box-shadow:none}
   #v-reader.paged .reader{touch-action:pan-y} /* 옆으로 미는 동작은 브라우저가 가로채지 않게 (페이지 넘김용) */
   #v-reader.paged .pgnav{display:block;position:fixed;top:42%;z-index:3;border:0;background:none;color:var(--muted);font-size:34px;line-height:1;padding:10px 4px}
   #pgPrev{left:0}#pgNext{right:0}
-  main{padding:12px 16px}
   .reader{grid-template-columns:1fr}
   #text{font-size:19px}
   #text.focus .sent.cur{font-size:22px}
@@ -250,6 +272,8 @@ td,th{border-bottom:.5px solid var(--line)}
   body.panel-open main{padding-bottom:55vh} /* 단어 창 높이만큼 스크롤 여유 */
   #panel{position:fixed;left:0;right:0;bottom:0;top:auto;margin:0;border-radius:16px 16px 0 0;max-height:50vh;overflow:auto;
     box-shadow:0 -4px 20px rgba(0,0,0,.15);z-index:10;padding-bottom:max(16px,env(safe-area-inset-bottom))}
+  #panel:not(.hidden){animation:sheetUp .32s cubic-bezier(.2,.8,.2,1)}
+  #panel::before{content:"";display:block;width:36px;height:5px;border-radius:3px;background:var(--line);margin:-6px auto 10px}
 }
 </style>
 </head>
@@ -257,11 +281,11 @@ td,th{border-bottom:.5px solid var(--line)}
 <header>
   <h1>My LingQ</h1>
   <nav id="nav">
-    <button data-view="new"><span class="ti">✏️</span>새 레슨</button>
-    <button data-view="library"><span class="ti">📚</span>서재</button>
-    <button data-view="vocab"><span class="ti">📖</span>단어장</button>
-    <button data-view="review"><span class="ti">🧠</span>복습 <span class="badge hidden" id="dueBadge"></span></button>
-    <button data-view="stats"><span class="ti">📈</span>통계</button>
+    <button data-view="new"><span class="ti" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20Zm1 5h-2v4H7v2h4v4h2v-4h4v-2h-4V7Z"/></svg></span>새 레슨</button>
+    <button data-view="library"><span class="ti" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="4" width="4.2" height="16" rx="1.2"/><rect x="8.6" y="2.5" width="4.2" height="17.5" rx="1.2"/><rect x="14.6" y="4.3" width="4.2" height="16" rx="1.2" transform="rotate(-14 16.7 12.3)"/></svg></span>서재</button>
+    <button data-view="vocab"><span class="ti" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v15H6.5a1.5 1.5 0 0 0 0 3H20v2H6.5A3.5 3.5 0 0 1 3 18.5v-14Z"/></svg></span>단어장</button>
+    <button data-view="review"><span class="ti" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="6.5" y="3" width="14.5" height="12.5" rx="2.4"/><path d="M3 8.2A2.2 2.2 0 0 1 5 6v10.7a1.3 1.3 0 0 0 1.3 1.3H17a2.2 2.2 0 0 1-2.2 2H5.2A2.2 2.2 0 0 1 3 17.8V8.2Z"/></svg></span>복습 <span class="badge hidden" id="dueBadge"></span></button>
+    <button data-view="stats"><span class="ti" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="12" width="4.6" height="9" rx="1.3"/><rect x="9.7" y="7" width="4.6" height="14" rx="1.3"/><rect x="16.4" y="3" width="4.6" height="18" rx="1.3"/></svg></span>통계</button>
   </nav>
   <span class="stat" id="stat"></span>
   <button id="themeBtn" title="다크 모드 켜기/끄기"></button>
@@ -279,7 +303,7 @@ td,th{border-bottom:.5px solid var(--line)}
       </div>
     </div>
     <div id="lessonList"></div>
-    <div class="card row">
+    <div class="card list">
       <button id="lingqImport">⬇️ LingQ 기록 가져오기</button>
       <button id="exportBtn">백업 내보내기</button>
       <button id="importBtn" type="button">백업 불러오기</button>
@@ -289,7 +313,7 @@ td,th{border-bottom:.5px solid var(--line)}
 
   <!-- 새 레슨 등록 -->
   <section id="v-new" class="hidden">
-    <h2 style="margin:4px 0 12px;font-size:20px">＋ 새 레슨 만들기</h2>
+    <h2 style="margin:4px 0 12px;font-size:22px">새 레슨 만들기</h2>
     <div class="card">
       <div class="row tabs" style="margin-bottom:10px">
         <b style="margin-right:4px">가져올 곳</b>
@@ -1310,6 +1334,7 @@ function closePanel() {
   $('panel').classList.add('hidden');
   document.body.classList.remove('panel-open');
   selectEls([]);
+  if (isPaged() && scrollY) window.scrollTo({ top: 0, behavior: 'smooth' }); // 단어 창 때문에 밀렸던 화면을 원래대로
 }
 $('pClose').onclick = closePanel;
 $('pSpeak').onclick = () => selected && speak(selected);
@@ -1622,7 +1647,7 @@ function layoutPages() {
   v.classList.toggle('paged', reading && isPaged());
   if (!v.classList.contains('paged')) { $('text').style.height = ''; $('pageInfo').textContent = ''; return; }
   const t = $('text');
-  t.style.height = Math.max(200, innerHeight - (t.getBoundingClientRect().top + scrollY) - $('bbar').offsetHeight - 12) + 'px';
+  t.style.height = Math.max(200, $('bbar').getBoundingClientRect().top - (t.getBoundingClientRect().top + scrollY) - 12) + 'px'; // 단어 창 때문에 스크롤돼 있어도 같은 높이
   showPage(pageOf(playIdx));
 }
 // 페이지를 넘기면 그 페이지 첫 문장이 지금 위치 (▶는 여기서 재생, 다음에 열면 여기부터)
