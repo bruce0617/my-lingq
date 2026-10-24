@@ -109,7 +109,7 @@ main{max-width:1100px;margin:0 auto;padding:16px}
 table{width:100%;border-collapse:collapse}
 td,th{padding:8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
 #pbClose,.pgnav,#bbar{display:none}
-@media (max-width:800px){
+@media (max-width:800px), (pointer:coarse) and (max-width:1400px){ /* 아이폰 + 아이패드(터치) */
   /* 아이폰 리더: LingQ처럼 스크립트가 화면을 채우고, 영상·재생 막대는 ▶를 누를 때만 아래에 뜸 */
   body.reading header{display:none}
   body.reading main{padding:0 0 calc(64px + env(safe-area-inset-bottom))}
@@ -126,7 +126,7 @@ td,th{padding:8px;border-bottom:1px solid var(--line);text-align:left;vertical-a
   .video{position:fixed;right:8px;top:auto!important;bottom:calc(72px + env(safe-area-inset-bottom) + var(--pb,110px));width:min(80vw,420px);max-height:none;margin:0;z-index:6;box-shadow:0 2px 14px rgba(0,0,0,.3)}
   #bbar{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:7;justify-content:space-between;align-items:center;padding:8px 16px;padding-bottom:max(8px,env(safe-area-inset-bottom));background:var(--card);border-top:1px solid var(--line)}
   #bPlay{width:46px;height:46px;border-radius:50%;padding:0;font-size:18px;background:var(--accent);border-color:var(--accent);color:#fff}
-  #v-reader.paged #text{columns:1;column-gap:40px;column-fill:auto;overflow:hidden;padding:0;margin:4px 34px 0;border:0;border-radius:0;background:none}
+  #v-reader.paged #text{columns:1;column-gap:40px;column-fill:auto;overflow:hidden;padding:0;margin:4px auto 0;width:min(720px,calc(100vw - 68px));border:0;border-radius:0;background:none}
   #v-reader.paged #phraseHint{display:none}
   #v-reader.paged .pgnav{display:block;position:fixed;top:42%;z-index:3;border:0;background:none;color:var(--muted);font-size:34px;line-height:1;padding:10px 4px}
   #pgPrev{left:0}#pgNext{right:0}
@@ -472,6 +472,9 @@ function setStatus(k, s) {
   if (k === selected) markStatusButtons(s);
   renderSentExtra();
 }
+
+// 아이폰·아이패드 화면 (CSS의 @media와 같은 조건)
+const isTouchLayout = () => matchMedia('(max-width:800px), (pointer:coarse) and (max-width:1400px)').matches;
 
 // ---------- 화면 전환 ----------
 function show(view) {
@@ -1173,7 +1176,7 @@ function openPanel(k, example) {
 }
 // 아이폰: 아래에서 올라오는 단어 창에 문장이 가리지 않게, 고정 영역 바로 아래로 스크롤
 function revealAbovePanel(el) {
-  if (innerWidth > 800 || !el) return;
+  if (!isTouchLayout() || !el) return;
   window.scrollBy({ top: el.getBoundingClientRect().top - topBottom() - 12, behavior: 'smooth' });
 }
 function closePanel() {
@@ -1473,7 +1476,7 @@ $('viewToggle').onclick = () => {
 // ---------- 아이폰 페이지 보기 (LingQ처럼 스크립트를 페이지 단위로 넘김) ----------
 // 스크립트 칸 높이를 화면에 맞추고 CSS 다단(columns)으로 흘려서, 한 단 = 한 페이지
 let page = 0;
-const isPaged = () => innerWidth <= 800 && !settings.focus && settings.cc;
+const isPaged = () => isTouchLayout() && !settings.focus && settings.cc;
 const pageStep = () => $('text').clientWidth + 40; // 40 = column-gap
 const pageCount = () => Math.max(1, Math.round($('text').scrollWidth / pageStep()));
 function pageOf(i) {
@@ -1486,7 +1489,7 @@ function showPage(p) {
   $('pageInfo').textContent = `${page + 1} / ${pageCount()}`;
 }
 function layoutPages() {
-  const v = $('v-reader'), reading = innerWidth <= 800 && !v.classList.contains('hidden');
+  const v = $('v-reader'), reading = isTouchLayout() && !v.classList.contains('hidden');
   document.body.classList.toggle('reading', reading);
   v.classList.toggle('paged', reading && isPaged());
   if (!v.classList.contains('paged')) { $('text').style.height = ''; $('pageInfo').textContent = ''; return; }
