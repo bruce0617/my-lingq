@@ -117,18 +117,18 @@ td,th{padding:8px;border-bottom:1px solid var(--line);text-align:left;vertical-a
 /* ---------- 디자인: 애플 기본 앱 스타일 ---------- */
 /* 화면은 아이폰 기본 글꼴(SF), 읽는 글(스크립트·단어)은 Apple Books처럼 책 글꼴 */
 :root{
-  --bg:#f5f5f7;--bg-top:#fff;color-scheme:light;--card:#fff;--text:#000;--muted:#8a8a8e;--line:#d1d1d6;--accent:#007aff;--accent-soft:rgba(0,122,255,.12);
+  --bg:#f2f2f7;--bg-top:#f2f2f7;color-scheme:light;--edge:rgba(0,0,0,.06);--lift:0 1px 2px rgba(0,0,0,.05),0 2px 8px rgba(0,0,0,.04);--card:#fff;--text:#000;--muted:#8a8a8e;--line:#d1d1d6;--accent:#007aff;--accent-soft:rgba(0,122,255,.12);
   --fill:rgba(118,118,128,.12);--bar:rgba(249,249,249,.94);
   --new:#dceaff;--l1:#ffd54a;--l2:#ffe17d;--l3:#ffecab;--l4:#fff6d8;--play:#e3f3ea;--ok:#34c759;--thumb:#8e8e93;
   --serif:"Literata",Georgia,"Times New Roman",serif;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme=light]){
-  --bg:#000;--bg-top:#1c1c1e;color-scheme:dark;--card:#1c1c1e;--text:#fff;--muted:#8d8d93;--line:#38383a;--accent:#0a84ff;--accent-soft:rgba(10,132,255,.18);
+  --bg:#000;--bg-top:#121214;color-scheme:dark;--edge:rgba(255,255,255,.1);--lift:none;--card:#1c1c1e;--text:#fff;--muted:#8d8d93;--line:#38383a;--accent:#0a84ff;--accent-soft:rgba(10,132,255,.18);
   --fill:rgba(118,118,128,.24);--bar:rgba(22,22,24,.94);
   --new:#173a6b;--l1:#7a5d0c;--l2:#634d14;--l3:#4d3f1a;--l4:#3a331f;--play:#17342a;--ok:#30d158;
 }}
 :root[data-theme=dark]{
-  --bg:#000;--bg-top:#1c1c1e;color-scheme:dark;--card:#1c1c1e;--text:#fff;--muted:#8d8d93;--line:#38383a;--accent:#0a84ff;--accent-soft:rgba(10,132,255,.18);
+  --bg:#000;--bg-top:#121214;color-scheme:dark;--edge:rgba(255,255,255,.1);--lift:none;--card:#1c1c1e;--text:#fff;--muted:#8d8d93;--line:#38383a;--accent:#0a84ff;--accent-soft:rgba(10,132,255,.18);
   --fill:rgba(118,118,128,.24);--bar:rgba(22,22,24,.94);
   --new:#173a6b;--l1:#7a5d0c;--l2:#634d14;--l3:#4d3f1a;--l4:#3a331f;--play:#17342a;--ok:#30d158;
 }
@@ -147,19 +147,19 @@ header h1{font-size:17px;font-weight:600;margin-right:14px;letter-spacing:-.02em
 .ti{display:none}
 #nav{display:flex;gap:2px}
 #nav button,#authBtn{background:none;color:var(--muted);padding:6px 12px}
-#nav button.active{color:var(--accent)}
+#nav button.active{color:var(--accent);background:var(--accent-soft)}
 #authBtn{color:var(--accent)}
 #themeBtn{background:var(--fill);border-radius:16px;padding:5px 11px}
 .badge{background:#ff3b30}
 main{padding:24px}
-.card{border:0;border-radius:12px}
+.card{border:.5px solid var(--edge);border-radius:12px;box-shadow:var(--lift)}
 h2{letter-spacing:-.02em}
 #v-library h2{font-size:28px!important;font-weight:700}
 .tabs button{border-radius:16px;padding:5px 13px;font-size:15px}
 .tabs button:not(.on):not(.primary){color:var(--text)}
 /* 서재 카드 */
 .grid{gap:16px}
-.lcard{border:0;border-radius:12px}
+.lcard{border:.5px solid var(--edge);border-radius:12px;box-shadow:var(--lift)}
 .thumb{background-color:var(--thumb);font-weight:600}
 .thumb::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 62%,rgba(0,0,0,.25))}
 .counts{z-index:1}
@@ -181,7 +181,7 @@ h2{letter-spacing:-.02em}
 #panel{border-radius:14px}
 .lv{background:var(--l1);font-weight:700;color:#000}
 /* 통계·복습 */
-.tile{border:0;border-radius:12px;padding:14px 16px}
+.tile{border:.5px solid var(--edge);box-shadow:var(--lift);border-radius:12px;padding:14px 16px}
 .tile b{font-size:30px;font-weight:700;color:var(--text);letter-spacing:-.02em}
 .flash .word{font-size:38px}
 th{font-size:13px;color:var(--muted);font-weight:500}
@@ -195,11 +195,22 @@ td,th{border-bottom:.5px solid var(--line)}
   #themeBtn{margin-left:auto}
   #authBtn{background:var(--fill);border-radius:16px;padding:5px 14px}
   #nav{position:fixed;left:0;right:0;bottom:0;z-index:8;justify-content:space-around;gap:0;padding:6px 4px;padding-bottom:max(6px,env(safe-area-inset-bottom));background:var(--bar);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);border-top:.5px solid var(--line)}
-  #nav button{flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;padding:2px 0;font-size:10.5px;position:relative}
-  .ti{display:block;font-size:30px;line-height:1.15;opacity:.8;filter:drop-shadow(0 3px 3px rgba(0,0,0,.25));transition:transform .2s,filter .2s,opacity .2s}
-  #nav button.active .ti{opacity:1;transform:translateY(-3px) scale(1.12);filter:drop-shadow(0 7px 6px rgba(0,0,0,.3))}
-  #nav .badge{position:absolute;top:-2px;left:calc(50% + 8px)}
-  main{padding:8px 16px calc(96px + env(safe-area-inset-bottom))}
+  #nav button{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:4px 0 0;font-size:11px;position:relative}
+  /* 탭 아이콘: 아이폰 앱 아이콘처럼 색 타일 + 광택 + 그림자, 고른 탭만 선명하게 떠오름 */
+  .ti{display:grid;place-items:center;width:52px;height:52px;border-radius:14px;font-size:30px;line-height:1;position:relative;
+    background:linear-gradient(180deg,var(--t1),var(--t2));
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.55),inset 0 -3px 6px rgba(0,0,0,.18),0 4px 10px rgba(0,0,0,.18);
+    filter:saturate(.35);opacity:.55;transform:scale(.86);transition:transform .2s,opacity .2s,filter .2s}
+  .ti::after{content:"";position:absolute;inset:2px 3px 50%;border-radius:12px 12px 40% 40%;background:linear-gradient(180deg,rgba(255,255,255,.45),rgba(255,255,255,0))}
+  #nav button.active .ti{filter:none;opacity:1;transform:translateY(-4px) scale(1.04);box-shadow:inset 0 1px 0 rgba(255,255,255,.6),inset 0 -3px 6px rgba(0,0,0,.2),0 8px 18px rgba(0,0,0,.28)}
+  #nav button.active{font-weight:700;background:none}
+  #nav [data-view=new]{--t1:#ffb340;--t2:#ff7a00}
+  #nav [data-view=library]{--t1:#64c8ff;--t2:#0a6cff}
+  #nav [data-view=vocab]{--t1:#5fe07a;--t2:#1fa64a}
+  #nav [data-view=review]{--t1:#d58cff;--t2:#8e3fe0}
+  #nav [data-view=stats]{--t1:#ff7a9a;--t2:#ff2d55}
+  #nav .badge{position:absolute;top:0;left:calc(50% + 14px);z-index:2}
+  main{padding:8px 16px calc(120px + env(safe-area-inset-bottom))}
   #v-library h2{font-size:22px!important}
   #v-library .tabs{margin-left:0!important}
   body.reading{background:var(--card)}
@@ -246,11 +257,11 @@ td,th{border-bottom:.5px solid var(--line)}
 <header>
   <h1>My LingQ</h1>
   <nav id="nav">
-    <button data-view="new"><span class="ti">📝</span>새 레슨</button>
+    <button data-view="new"><span class="ti">✏️</span>새 레슨</button>
     <button data-view="library"><span class="ti">📚</span>서재</button>
     <button data-view="vocab"><span class="ti">📖</span>단어장</button>
-    <button data-view="review"><span class="ti">🔁</span>복습 <span class="badge hidden" id="dueBadge"></span></button>
-    <button data-view="stats"><span class="ti">📊</span>통계</button>
+    <button data-view="review"><span class="ti">🧠</span>복습 <span class="badge hidden" id="dueBadge"></span></button>
+    <button data-view="stats"><span class="ti">📈</span>통계</button>
   </nav>
   <span class="stat" id="stat"></span>
   <button id="themeBtn" title="다크 모드 켜기/끄기"></button>
@@ -1876,7 +1887,7 @@ const setSync = t => { $('syncStatus').textContent = t; };
 // 잠깐 떴다 사라지는 알림
 function toast(msg) {
   const el = Object.assign(document.createElement('div'), { textContent: msg });
-  Object.assign(el.style, { position: 'fixed', left: '50%', bottom: 'calc(90px + env(safe-area-inset-bottom))', transform: 'translateX(-50%)',
+  Object.assign(el.style, { position: 'fixed', left: '50%', bottom: 'calc(118px + env(safe-area-inset-bottom))', transform: 'translateX(-50%)',
     background: 'rgba(30,30,30,.92)', color: '#fff', padding: '10px 16px', borderRadius: '20px', fontSize: '15px', zIndex: 50, maxWidth: '90vw' });
   document.body.appendChild(el);
   setTimeout(() => el.remove(), 3500);
