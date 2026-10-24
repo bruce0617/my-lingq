@@ -194,6 +194,7 @@ body.reading::before{display:none}
 /* 카드: 반투명 유리 — 뒤 배경색이 살짝 비침 */
 .card,.lcard,.tile{background:var(--surface);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px)}
 #panel{background:var(--card)}
+.theme-swap *,.theme-swap *::before,.theme-swap *::after{transition:none!important;animation:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
 /* 화면 전환: 부드럽게 들어옴 (리더는 페이지 계산 때문에 투명도만) */
 @keyframes viewIn{from{opacity:0;transform:translateY(10px)}}
 @keyframes fadeIn{from{opacity:0}}
@@ -643,11 +644,22 @@ document.querySelectorAll('[data-view]').forEach(b => b.onclick = () => show(b.d
 // 다크 모드 켜기/끄기: 이 기기에만 기억 (처음엔 기기 설정을 따름)
 const isDark = () => document.documentElement.dataset.theme ? document.documentElement.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
 // 버튼 + 화면 위·아래 시스템 영역 색(theme-color)을 지금 모드에 맞춤 — 기기가 다크여도 앱이 밝으면 밝게
-const paintThemeBtn = () => { $('themeBtn').textContent = isDark() ? '☀️' : '🌙'; $('themeColor').content = isDark() ? '#000000' : '#f2f2f7'; };
+const paintThemeBtn = () => {
+  $('themeBtn').textContent = isDark() ? '☀️' : '🌙';
+  // 아이폰은 theme-color 값만 바꾸면 무시할 때가 있어서 태그를 새로 끼워 넣음
+  const m = $('themeColor'), n = m.cloneNode();
+  n.content = isDark() ? '#000000' : '#f2f2f7';
+  m.replaceWith(n);
+};
 matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', paintThemeBtn);
 $('themeBtn').onclick = () => {
   const t = isDark() ? 'light' : 'dark';
-  document.documentElement.dataset.theme = t;
+  // 바꾸는 순간만 움직임·유리 효과를 끔 → 아이폰 사파리가 반투명 막대·카드를 새 색으로 다시 그리게 함
+  const root = document.documentElement;
+  root.classList.add('theme-swap');
+  root.dataset.theme = t;
+  void root.offsetHeight;
+  requestAnimationFrame(() => requestAnimationFrame(() => root.classList.remove('theme-swap')));
   try { localStorage.setItem('ml_theme', t); } catch { /* 이번만 적용 */ }
   paintThemeBtn();
 };
