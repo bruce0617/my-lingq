@@ -195,6 +195,8 @@ body.reading::before{display:none}
 .card,.lcard,.tile{background:var(--surface);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px)}
 #panel{background:var(--card)}
 .theme-swap *,.theme-swap *::before,.theme-swap *::after{transition:none!important;animation:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+/* 고정된 층(아래 막대·배경)은 아이폰이 다시 그리지 않아 옛 색이 남음 → 잠깐 빼냈다가 다시 넣음 */
+.theme-swap body::before,.theme-swap #nav,.theme-swap #bbar{display:none!important}
 /* 화면 전환: 부드럽게 들어옴 (리더는 페이지 계산 때문에 투명도만) */
 @keyframes viewIn{from{opacity:0;transform:translateY(10px)}}
 @keyframes fadeIn{from{opacity:0}}
@@ -659,7 +661,7 @@ $('themeBtn').onclick = () => {
   root.classList.add('theme-swap');
   root.dataset.theme = t;
   void root.offsetHeight;
-  requestAnimationFrame(() => requestAnimationFrame(() => root.classList.remove('theme-swap')));
+  setTimeout(() => { root.classList.remove('theme-swap'); void root.offsetHeight; }, 60);
   try { localStorage.setItem('ml_theme', t); } catch { /* 이번만 적용 */ }
   paintThemeBtn();
 };
