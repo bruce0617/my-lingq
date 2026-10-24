@@ -3,7 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#2f6fde">
+<meta name="theme-color" content="#16213a">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,400;7..72,500;7..72,700&display=swap">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="MyLingQ">
@@ -109,7 +113,82 @@ main{max-width:1100px;margin:0 auto;padding:16px}
 table{width:100%;border-collapse:collapse}
 td,th{padding:8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
 #pbClose,.pgnav,#bbar{display:none}
+/* ---------- 디자인: 잉크와 종이 ---------- */
+/* 화면은 Pretendard, 읽는 글(스크립트·단어)은 책 글꼴 Literata */
+:root{
+  --bg:#eef1f5;--card:#fff;--text:#1a2232;--muted:#667085;--line:#dfe4ec;--accent:#2b4acb;--accent-soft:#e8edfc;--ink:#16213a;
+  --new:#e5edff;--l1:#ffd54a;--l2:#ffe17d;--l3:#ffecab;--l4:#fff6d8;--play:#e3f3ea;--ok:#1d9a68;--thumb:#24325c;
+  --shadow:0 1px 2px rgba(22,33,58,.05),0 6px 20px rgba(22,33,58,.07);
+  --serif:"Literata",Georgia,"Times New Roman",serif;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#0e131d;--card:#161d2a;--text:#e6eaf2;--muted:#8e98ab;--line:#263042;--accent:#86a2ff;--accent-soft:#1d2945;--ink:#0a0f19;
+  --new:#1d3260;--l1:#7a5d0c;--l2:#634d14;--l3:#4d3f1a;--l4:#3a331f;--play:#17342a;--shadow:0 1px 2px rgba(0,0,0,.3),0 6px 20px rgba(0,0,0,.25);
+}
+  button.primary,#bPlay{color:#0b1020}
+}
+body{font-family:"Pretendard Variable",Pretendard,-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo",sans-serif;letter-spacing:-.01em}
+button{border-radius:10px;font-weight:500;transition:background-color .15s,border-color .15s,color .15s}
+button:hover{border-color:color-mix(in srgb,var(--accent) 35%,var(--line))}
+button.primary{font-weight:600;box-shadow:0 1px 2px rgba(43,74,203,.25)}
+button.primary:hover{background:color-mix(in srgb,var(--accent) 88%,#000)}
+button.on{outline:none;background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+input,textarea,select{border-radius:10px}
+input:focus,textarea:focus{border-color:var(--accent)}
+/* 위 메뉴: 짙은 남색 막대, 지금 보는 메뉴는 밝게 */
+header{background:var(--ink);border-bottom:0;color:#fff;gap:10px;padding-left:24px;padding-right:24px}
+header h1{display:flex;align-items:center;gap:9px;font:700 19px/1 var(--serif);letter-spacing:-.02em;margin-right:14px}
+header .mark{display:grid;place-items:center;width:28px;height:28px;border-radius:8px;background:#fff;color:var(--ink);font:700 17px/1 var(--serif)}
+#nav{display:flex;gap:2px}
+#nav button,#authBtn{background:none;border-color:transparent;color:rgba(255,255,255,.72);padding:7px 13px}
+#nav button:hover{color:#fff;background:rgba(255,255,255,.08)}
+#nav button.active{color:#fff;background:rgba(255,255,255,.14)}
+#authBtn{border-color:rgba(255,255,255,.25)}
+header .stat,#syncStatus{color:rgba(255,255,255,.6)}
+.badge{background:#ff6b5b}
+main{padding:24px}
+.card{border-radius:16px;box-shadow:var(--shadow);border-color:transparent}
+h2{letter-spacing:-.02em}
+.tabs button{padding:6px 14px}
+/* 서재 카드 */
+.grid{gap:18px}
+.lcard{border:0;border-radius:14px;box-shadow:var(--shadow);transition:transform .18s,box-shadow .18s}
+.lcard:hover{transform:translateY(-2px);box-shadow:0 2px 4px rgba(22,33,58,.06),0 12px 28px rgba(22,33,58,.12)}
+.thumb{background-color:var(--thumb);font-family:var(--serif);font-weight:500}
+.thumb::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 45%,rgba(10,15,25,.55))}
+.counts{z-index:1}
+.counts span{background:rgba(10,15,25,.55);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.newbar{height:3px}
+.lbody{padding:11px 13px 12px}
+.lbody b{font:600 15.5px/1.35 var(--serif);letter-spacing:-.01em}
+/* 리더: 종이책 같은 본문 */
+#text{font-family:var(--serif);font-size:21px;line-height:1.95;letter-spacing:0}
+#text.focus .sent.cur{font-size:26px;line-height:1.9}
+.w{border-radius:5px;padding:1px 2px;transition:background-color .15s}
+.sent.playing{background:none;text-decoration:underline 2px color-mix(in srgb,var(--ok) 60%,transparent);text-underline-offset:7px}
+#readerTitle{font:600 17px/1.3 var(--serif)}
+#panel .word,.flash .word{font-family:var(--serif);letter-spacing:-.01em}
+#panel .ex,.ex{font-family:var(--serif)}
+.lv{background:var(--l1);font-weight:700}
+/* 통계·복습 */
+.tile{border:0;box-shadow:var(--shadow);border-radius:16px;padding:16px 18px}
+.tile b{font:700 32px/1.2 var(--serif);color:var(--accent);letter-spacing:-.02em}
+.flash .word{font-size:38px}
+th{font-size:13px;color:var(--muted);font-weight:600}
+#bbar{background:color-mix(in srgb,var(--card) 88%,transparent);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+#bPlay{box-shadow:0 4px 14px rgba(43,74,203,.35)}
 @media (max-width:800px), (pointer:coarse) and (max-width:1400px){ /* 아이폰 + 아이패드(터치) */
+  /* 위 메뉴: 첫 줄 로고·로그인, 둘째 줄 메뉴(옆으로 밀기) */
+  header{gap:6px;padding:8px 14px 0;padding-top:max(8px,env(safe-area-inset-top))}
+  header h1{font-size:18px;margin:0}
+  header .stat{display:none}
+  #authBtn{margin-left:auto}
+  #nav{order:9;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;width:calc(100% + 28px);margin:2px -14px 0;padding:0 8px 8px}
+  #nav::-webkit-scrollbar{display:none}
+  #nav button{flex:none}
+  main{padding:16px}
+  body.reading{background:var(--card)}
   /* 아이폰 리더: LingQ처럼 스크립트가 화면을 채우고, 영상·재생 막대는 ▶를 누를 때만 아래에 뜸 */
   body.reading header{display:none}
   body.reading main{padding:0 0 calc(64px + env(safe-area-inset-bottom))}
@@ -128,6 +207,7 @@ td,th{padding:8px;border-bottom:1px solid var(--line);text-align:left;vertical-a
   #bPlay{width:46px;height:46px;border-radius:50%;padding:0;font-size:18px;background:var(--accent);border-color:var(--accent);color:#fff}
   #v-reader.paged #text{column-width:min(720px,calc(100vw - 68px));column-gap:40px;column-fill:auto;overflow:hidden;padding:0;margin:4px auto 0;width:min(720px,calc(100vw - 68px));border:0;border-radius:0;background:none}
   #v-reader.paged #phraseHint{display:none}
+  #v-reader.paged #text{box-shadow:none}
   #v-reader.paged .reader{touch-action:pan-y} /* 옆으로 미는 동작은 브라우저가 가로채지 않게 (페이지 넘김용) */
   #v-reader.paged .pgnav{display:block;position:fixed;top:42%;z-index:3;border:0;background:none;color:var(--muted);font-size:34px;line-height:1;padding:10px 4px}
   #pgPrev{left:0}#pgNext{right:0}
@@ -150,14 +230,16 @@ td,th{padding:8px;border-bottom:1px solid var(--line);text-align:left;vertical-a
 </head>
 <body>
 <header>
-  <h1>📚 My LingQ</h1>
-  <button data-view="library">서재</button>
-  <button data-view="new">＋ 새 레슨</button>
-  <button data-view="vocab">단어장</button>
-  <button data-view="review">복습 <span class="badge hidden" id="dueBadge"></span></button>
-  <button data-view="stats">통계</button>
+  <h1><span class="mark" aria-hidden="true">L</span>My LingQ</h1>
+  <nav id="nav">
+    <button data-view="library">서재</button>
+    <button data-view="new">＋ 새 레슨</button>
+    <button data-view="vocab">단어장</button>
+    <button data-view="review">복습 <span class="badge hidden" id="dueBadge"></span></button>
+    <button data-view="stats">통계</button>
+  </nav>
   <span class="stat" id="stat"></span>
-  <button id="authBtn" class="hidden" title="구글 로그인하면 아이폰·Mac 동기화">☁️ 로그인</button>
+  <button id="authBtn" class="hidden" title="구글 로그인하면 아이폰·Mac 동기화">로그인</button>
   <span class="muted" id="syncStatus"></span>
 </header>
 
@@ -165,9 +247,9 @@ td,th{padding:8px;border-bottom:1px solid var(--line);text-align:left;vertical-a
   <!-- 서재: 내 레슨 목록 -->
   <section id="v-library">
     <div class="row" style="margin:4px 0 12px">
-      <h2 style="margin:0;font-size:20px">📚 내 레슨 <span class="muted" id="libCount"></span></h2>
+      <h2 style="margin:0;font-size:20px">내 레슨 <span class="muted" id="libCount"></span></h2>
       <div class="row tabs" style="margin-left:auto">
-        <button data-lf="all" class="on">전체</button><button data-lf="video">🎬 영상</button><button data-lf="text">📄 글</button><button data-lf="done">✓ 다 읽음</button>
+        <button data-lf="all" class="on">전체</button><button data-lf="video">영상</button><button data-lf="text">글</button><button data-lf="done">✓ 다 읽음</button>
         <button class="primary" data-view="new">＋ 새 레슨</button>
       </div>
     </div>
@@ -355,7 +437,7 @@ td,th{padding:8px;border-bottom:1px solid var(--line);text-align:left;vertical-a
     <!-- 복습 시작: 개수 선택 + 기록 -->
     <div id="revSetup">
       <div class="card" style="text-align:center">
-        <h2 style="margin:0 0 4px;font-size:20px">🔁 복습</h2>
+        <h2 style="margin:0 0 4px;font-size:20px">복습</h2>
         <p class="muted" id="revPool" style="margin:0 0 12px"></p>
         <div class="row" style="justify-content:center">
           <button class="primary" data-rn="15">15개</button>
@@ -480,6 +562,7 @@ const isTouchLayout = () => matchMedia('(max-width:800px), (pointer:coarse) and 
 // ---------- 화면 전환 ----------
 function show(view) {
   for (const v of ['library', 'new', 'reader', 'edit', 'vocab', 'review', 'stats']) $('v-' + v).classList.toggle('hidden', v !== view);
+  document.querySelectorAll('#nav [data-view]').forEach(b => b.classList.toggle('active', b.dataset.view === view));
   if (view !== 'reader') { stopPlay(); closePanel(); document.body.classList.remove('pbar'); }
   layoutPages();
   if (view === 'library') renderLibrary();
@@ -1890,7 +1973,7 @@ async function initCloud() {
   authMod.onAuthStateChanged(auth, user => {
     cloud = null;
     pushed = { words: {}, lessons: {}, meta: null };
-    if (!user) { btn.textContent = '☁️ 로그인'; setSync(''); return; }
+    if (!user) { btn.textContent = '로그인'; setSync(''); return; }
     btn.textContent = '☁️'; btn.title = `${user.email} — 누르면 로그아웃`;
     cloud = { fs, db, uid: user.uid, ready: false };
     pull();
