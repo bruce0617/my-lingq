@@ -158,6 +158,7 @@ h2{letter-spacing:-.02em}
 .thumb{background-color:var(--thumb);font-family:var(--serif);font-weight:500}
 .thumb::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 45%,rgba(10,15,25,.55))}
 .counts{z-index:1}
+.dur{position:absolute;right:8px;bottom:8px;z-index:1;font-family:"Pretendard Variable",Pretendard,sans-serif;background:rgba(10,15,25,.72);color:#fff;font-size:12px;font-weight:600;line-height:20px;padding:0 7px;border-radius:6px}
 .counts span{background:rgba(10,15,25,.55);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
 .newbar{height:3px}
 .lbody{padding:11px 13px 12px}
@@ -597,6 +598,8 @@ document.querySelectorAll('[data-lf]').forEach(b => b.onclick = () => {
   document.querySelectorAll('[data-lf]').forEach(x => x.classList.toggle('on', x === b));
   renderLibrary();
 });
+// 영상 길이: 마지막 자막 시각 기준 (올림한 분)
+const fmtLen = t => { const m = Math.max(1, Math.ceil(t / 60)); return m < 60 ? `${m}분` : `${Math.floor(m / 60)}시간${m % 60 ? ` ${m % 60}분` : ''}`; };
 function renderLibrary() {
   const list = $('lessonList');
   if (!lessons.length) { list.innerHTML = '<div class="card" style="text-align:center"><p>아직 레슨이 없어요.</p><button class="primary" onclick="show(\'new\')">＋ 새 레슨 만들기</button></div>'; $('libCount').textContent = ''; return; }
@@ -610,7 +613,7 @@ function renderLibrary() {
     const thumb = l.video ? `style="background-image:url('https://i.ytimg.com/vi/${l.video}/mqdefault.jpg')"` : l.netflix ? 'style="background:#141414;color:#e50914"' : '';
     return `<div class="lcard" data-open="${l.id}">
       <div class="thumb" ${thumb}>${l.video ? '' : l.netflix ? 'N' : esc((l.title.match(/[A-Za-z0-9가-힣]/) || ['📄'])[0].toUpperCase())}
-        <div class="counts"><span><i class="dot" style="background:#8fb8ff"></i>${st.unknown}</span><span><i class="dot" style="background:#ffd966"></i>${st.lingqs}</span></div></div>
+        <div class="counts"><span><i class="dot" style="background:#8fb8ff"></i>${st.unknown}</span><span><i class="dot" style="background:#ffd966"></i>${st.lingqs}</span></div>${l.cues?.length ? `<span class="dur">${fmtLen(l.cues[l.cues.length - 1].t)}</span>` : ''}</div>
       <div class="newbar"><i style="width:${100 - pct}%"></i></div>
       <div class="lbody"><b>${esc(l.title)}</b>
         <div class="lfoot"><span class="muted"><i class="dot" style="background:var(--new)"></i>새 단어 ${pct}%</span>
