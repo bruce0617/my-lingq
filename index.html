@@ -599,9 +599,11 @@ function bump(field, n = 1) {
 }
 
 // 상태: 0 새 단어(파랑) · 1~4 학습 중(노랑) · 5 아는 단어 · -1 무시
-const statusOf = k => words[k]?.status ?? 0;
+const statusOf = k => words[k]?.status ?? (/^\d/.test(k) ? 5 : 0); // 숫자는 기본 '아는 단어'(파란 표시·새 단어 수에서 빠짐)
 const cls = s => s === 0 ? 'sn' : s >= 1 && s <= 4 ? 's' + s : '';
 const WORD_RE = /[A-Za-z]+(?:['’][A-Za-z]+)*/g;
+// 리더에서 누르고 드래그할 수 있는 낱말: 영어 단어 + 숫자(1,000 · 3.5 · 10:30 · 3rd · 1990s)
+const TOKEN_RE = /\d+(?:[.,:]\d+)*[A-Za-z]*|[A-Za-z]+(?:['’][A-Za-z]+)*/g;
 const norm = w => w.toLowerCase().replace(/’/g, "'");
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const $ = id => document.getElementById(id);
@@ -1031,7 +1033,7 @@ const isTimed = () => !!(current?.video || current?.netflix); // 시간이 있�
 let current = null, selected = null, sentences = [], selSent = 0, selRange = [];
 function tokenize(s) {
   let out = '', last = 0;
-  for (const m of s.matchAll(WORD_RE)) {
+  for (const m of s.matchAll(TOKEN_RE)) {
     const k = norm(m[0]);
     out += esc(s.slice(last, m.index)) + `<span class="w ${cls(statusOf(k))}" data-k="${esc(k)}">${esc(m[0])}</span>`;
     last = m.index + m[0].length;
@@ -1900,7 +1902,7 @@ $('lingqImport').onclick = async () => {
     return alert('LingQ 데이터 파일은 집 Mac에만 있어요.\nMac에서 http://localhost:8000 을 열어 구글 로그인 → 이 버튼을 한 번 누르면, 다른 기기는 로그인만 하면 자동으로 받아져요.');
   }
   if (!confirm(`LingQ 기록을 가져올까요?\n\n저장한 단어·구문 ${data.cards.length.toLocaleString()}개\n아는 단어 ${data.known.length.toLocaleString()}개\n\n(My LingQ에서 직접 저장한 단어는 그대로 둡니다)`)) return;
-  const keyOf = t => (t.match(WORD_RE) || []).map(norm).join(' ');
+  const keyOf = t => (t.match(TOKEN_RE) || []).map(norm).join(' ');
   const mine = k => words[k] && !words[k].from; // 앱에서 직접 저장한 단어
   let known = 0, cards = 0;
   for (const w of data.known) {
