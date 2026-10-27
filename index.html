@@ -152,6 +152,7 @@ header h1{font-size:17px;font-weight:600;margin-right:14px;letter-spacing:-.02em
 #nav button.active{color:var(--accent);background:var(--accent-soft)}
 #authBtn{color:var(--accent)}
 #themeBtn{background:var(--fill);border-radius:16px;padding:5px 11px}
+#langSel{width:auto;-webkit-appearance:none;appearance:none;background:var(--fill);border-radius:16px;padding:5px 11px;font-size:14px;margin-left:6px}
 .badge{background:#ff3b30}
 main{padding:24px}
 .card{border:.5px solid var(--edge);border-radius:12px;box-shadow:var(--lift)}
@@ -230,7 +231,7 @@ main>section:not(.hidden):not(#v-reader){animation:viewIn .32s cubic-bezier(.2,.
   header h1{font-size:32px;font-weight:700;margin:0;letter-spacing:-.03em}
   header .stat{display:none}
   #themeBtn{margin-left:auto}
-  #authBtn,#themeBtn{background:var(--glass);border:.5px solid var(--edge);border-radius:18px;padding:6px 14px;box-shadow:var(--lift)}
+  #authBtn,#themeBtn,#langSel{background:var(--glass);border:.5px solid var(--edge);border-radius:18px;padding:6px 14px;box-shadow:var(--lift)}
   /* 아래 탭: 화면 위에 떠 있는 유리 캡슐 (iOS 26), 고른 탭은 파란 아이콘 + 유리 하이라이트 */
   #nav{position:fixed;left:14px;right:14px;bottom:max(12px,env(safe-area-inset-bottom));z-index:8;justify-content:space-around;gap:2px;padding:6px;border-radius:32px;
     background:var(--glass);backdrop-filter:saturate(180%) blur(24px);-webkit-backdrop-filter:saturate(180%) blur(24px);border:.5px solid var(--glass-edge);box-shadow:var(--glass-shadow)}
@@ -310,6 +311,7 @@ main>section:not(.hidden):not(#v-reader){animation:viewIn .32s cubic-bezier(.2,.
   </nav>
   <span class="stat" id="stat"></span>
   <button id="themeBtn" title="다크 모드 켜기/끄기"></button>
+  <select id="langSel" title="공부할 언어"></select>
   <button id="authBtn" class="hidden" title="구글 로그인하면 아이폰·Mac 동기화">로그인</button>
   <span class="muted" id="syncStatus"></span>
 </header>
@@ -318,7 +320,7 @@ main>section:not(.hidden):not(#v-reader){animation:viewIn .32s cubic-bezier(.2,.
   <!-- 서재: 내 레슨 목록 -->
   <section id="v-library">
     <div class="row" style="margin:4px 0 12px">
-      <h2 style="margin:0;font-size:20px">내 레슨 <span class="muted" id="libCount"></span></h2>
+      <h2 style="margin:0;font-size:20px"><span id="libLang">내</span> 레슨 <span class="muted" id="libCount"></span></h2>
       <div class="row tabs" style="margin-left:auto">
         <button data-lf="all" class="on">전체</button><button data-lf="reading">진행 중</button><button data-lf="video">영상</button><button data-lf="text">글</button><button data-lf="done">✓ 다 읽음</button>
       </div>
@@ -582,7 +584,7 @@ async function openStore() {
 let lessons = [];
 let words = {};   // { 단어 또는 "구문 키": {status, meaning, example, added, due, interval} }
 let log = {};     // { 'YYYY-MM-DD': {known, lingqs, reviewed} }
-const settings = { rate: 0.9, voice: '', focus: true, cc: true, video: true, trans: false };
+const settings = { rate: 0.9, voice: '', focus: true, cc: true, video: true, trans: false, lang: 'en' };
 // 저장할 때마다 클라우드 업로드 예약(로그인했을 때만). u = 마지막 수정 시각 → 기기 간 병합 기준
 const saveLessons = () => { if (current) current.u = Date.now(); store.save('ml_lessons', lessons); schedulePush(); };
 const saveWords = () => { store.save('ml_words', words); renderStat(); schedulePush(); };
@@ -599,20 +601,35 @@ function bump(field, n = 1) {
 }
 
 // 상태: 0 새 단어(파랑) · 1~4 학습 중(노랑) · 5 아는 단어 · -1 무시
-const statusOf = k => words[k]?.status ?? (/^\d/.test(k) ? 5 : 0); // 숫자는 기본 '아는 단어'(파란 표시·새 단어 수에서 빠짐)
+const isNum = k => /^[$€£¥₩]?[\d０-９]/.test(k);
+const statusOf = k => words[k]?.status ?? (isNum(k) ? 5 : 0); // 숫자는 기본 '아는 단어'(파란 표시·새 단어 수에서 빠짐)
 const cls = s => s === 0 ? 'sn' : s >= 1 && s <= 4 ? 's' + s : '';
-const WORD_RE = /[A-Za-z]+(?:['’][A-Za-z]+)*/g;
-// 리더에서 누르고 드래그할 수 있는 낱말: 영어 단어 + 숫자(1,000 · 3.5 · 10:30 · 3rd · 1990s)
-const TOKEN_RE = /\d+(?:[.,:]\d+)*[A-Za-z]*|[A-Za-z]+(?:['’][A-Za-z]+)*/g;
+// 리더에서 누르고 드래그할 수 있는 낱말: 영어 단어 + 숫자($3.50 · 1,000 · 10:30 · 3rd · 1990s · 50%)
+const TOKEN_RE = /[$€£¥₩]?\d+(?:[.,:]\d+)*(?:[A-Za-z]+|%)?|[A-Za-z]+(?:['’][A-Za-z]+)*/g;
+// 공부하는 언어 (위 메뉴에서 고름) — 레슨·단어장·복습·통계가 언어별로 따로
+// shortcut: 단어는 키 하나에 lang만 붙임 — 같은 철자를 쓰는 언어(스페인어 등)를 넣으면 키를 언어별로 나눌 것
+const LANGS = { en: '🇺🇸 영어', ja: '🇯🇵 일본어' };
+const curLang = () => settings.lang || 'en';
+const langOf = x => x?.lang || 'en'; // lang 없는 옛 레슨·단어는 영어
+const myWords = () => Object.entries(words).filter(([, w]) => langOf(w) === curLang());
+const jaSeg = typeof Intl.Segmenter === 'function' ? new Intl.Segmenter('ja', { granularity: 'word' }) : null;
+// 문장 속 낱말 목록 — 일본어는 띄어쓰기가 없어 브라우저의 낱말 나누기 사용
+const tokensOf = s => curLang() === 'ja' && jaSeg
+  ? [...jaSeg.segment(s)].filter(g => /[\p{L}\p{N}]/u.test(g.segment)).map(g => ({ 0: g.segment, index: g.index })) // 사파리는 숫자를 isWordLike로 안 봐서 직접 거름
+  : [...s.matchAll(TOKEN_RE)];
+// 구문 키: 영어는 띄어쓰기, 일본어는 보이지 않는 공백(U+200B)으로 단어를 이음
+const PH_SEP = /[ \u200b]/;
+const phraseKey = parts => parts.join(curLang() === 'ja' ? '\u200b' : ' ');
+const plain = k => k.replace(/\u200b/g, '');
 const norm = w => w.toLowerCase().replace(/’/g, "'");
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const $ = id => document.getElementById(id);
 const isLearning = s => s >= 1 && s <= 4;
-const isPhrase = k => k.includes(' ');
+const isPhrase = k => PH_SEP.test(k);
 
 function setStatus(k, s) {
   const prev = statusOf(k);
-  const w = words[k] || (words[k] = { status: 0, meaning: '', example: '', added: Date.now() });
+  const w = words[k] || (words[k] = { status: 0, meaning: '', example: '', added: Date.now(), lang: curLang() });
   w.status = s;
   touchWord(k);
   if (s === 5 && prev !== 5) bump('known');
@@ -669,10 +686,17 @@ $('themeBtn').onclick = () => {
 };
 paintThemeBtn();
 
+// 공부할 언어 바꾸기: 서재·단어장·복습·통계가 그 언어 것만 보임
+function paintLang() { $('langSel').innerHTML = Object.entries(LANGS).map(([k, t]) => `<option value="${k}" ${k === curLang() ? 'selected' : ''}>${t.split(' ')[0]}</option>`).join(''); }
+$('langSel').onchange = () => {
+  settings.lang = $('langSel').value; saveSettings();
+  loadVoices(); renderStat(); show('library');
+};
+
 // 다시 볼 단어: 복습에서 마지막에 '몰랐어요'를 누른 학습 중 단어 (다음 복습에 먼저 나옴)
-const dueWords = () => Object.entries(words).filter(([, w]) => isLearning(w.status) && w.again);
+const dueWords = () => myWords().filter(([, w]) => isLearning(w.status) && w.again);
 function renderStat() {
-  const vals = Object.values(words);
+  const vals = myWords().map(([, w]) => w);
   $('stat').textContent = `아는 단어 ${vals.filter(w => w.status === 5).length.toLocaleString()} · 오늘 저장 ${log[today()]?.lingqs || 0}`;
   const due = dueWords().length;
   $('dueBadge').textContent = due;
@@ -681,7 +705,7 @@ function renderStat() {
 
 // ---------- 서재 ----------
 function lessonStats(l) {
-  const set = new Set((l.text.match(WORD_RE) || []).map(norm));
+  const set = new Set(tokensOf(l.text).map(m => norm(m[0])).filter(k => !isNum(k)));
   let unknown = 0, lingqs = 0;
   set.forEach(k => { const s = statusOf(k); if (s === 0) unknown++; else if (isLearning(s)) lingqs++; });
   return { total: set.size, unknown, lingqs };
@@ -700,8 +724,10 @@ const COVERS = ['#4f6bed,#8fb3ff', '#7b5cf0,#d39bff', '#0f9b8e,#6fdcc0', '#e0679
 const coverOf = t => { let h = 0; for (const c of t) h = (h * 31 + c.charCodeAt(0)) >>> 0; return `linear-gradient(135deg,${COVERS[h % COVERS.length]})`; };
 function renderLibrary() {
   const list = $('lessonList');
-  if (!lessons.length) { list.innerHTML = '<div class="card" style="text-align:center"><p>아직 레슨이 없어요.</p><button class="primary" onclick="show(\'new\')">＋ 새 레슨 만들기</button></div>'; $('libCount').textContent = ''; return; }
-  const recent = lessons.slice().sort((a, b) => (b.opened || b.created) - (a.opened || a.created))
+  const mine = lessons.filter(l => langOf(l) === curLang());
+  $('libLang').textContent = LANGS[curLang()];
+  if (!mine.length) { list.innerHTML = `<div class="card" style="text-align:center"><p>${LANGS[curLang()]} 레슨이 아직 없어요.</p><button class="primary" onclick="show('new')">＋ 새 레슨 만들기</button></div>`; $('libCount').textContent = ''; return; }
+  const recent = mine.sort((a, b) => (b.opened || b.created) - (a.opened || a.created))
     .filter(l => ({ all: true, reading: !l.done, done: !!l.done, video: !!(l.video || l.netflix), text: !(l.video || l.netflix) })[libFilter]);
   $('libCount').textContent = `${recent.length}개`;
   if (!recent.length) { list.innerHTML = `<p class="muted">${{ all: '', reading: '진행 중인 ', video: '영상 ', text: '글 ', done: '다 읽은 ' }[libFilter]}레슨이 아직 없어요.</p>`; return; }
@@ -710,7 +736,7 @@ function renderLibrary() {
     const pct = st.total ? Math.round(st.unknown / st.total * 100) : 0;
     const thumb = l.video ? `style="background-image:url('https://i.ytimg.com/vi/${l.video}/mqdefault.jpg')"` : l.netflix ? 'style="background:#141414;color:#e50914"' : `style="background:${coverOf(l.title)}"`;
     return `<div class="lcard" data-open="${l.id}">
-      <div class="thumb" ${thumb}>${l.video ? '' : l.netflix ? 'N' : esc((l.title.match(/[A-Za-z0-9가-힣]/) || ['📄'])[0].toUpperCase())}
+      <div class="thumb" ${thumb}>${l.video ? '' : l.netflix ? 'N' : esc((l.title.match(/[\p{L}\p{N}]/u) || ['📄'])[0].toUpperCase())}
         ${l.done ? '<span class="donemark">✓ 다 읽음</span>' : ''}<div class="counts"><span><i class="dot" style="background:#8fb8ff"></i>${st.unknown}</span><span><i class="dot" style="background:#ffd966"></i>${st.lingqs}</span></div>${l.cues?.length ? `<span class="dur">${fmtLen(l.cues[l.cues.length - 1].t)}</span>` : ''}</div>
       <div class="newbar"><i style="width:${100 - pct}%"></i></div>
       <div class="lbody"><b>${esc(l.title)}</b>
@@ -735,7 +761,7 @@ $('addLesson').onclick = () => {
   const text = $('newText').value.trim();
   if (!text) return alert('텍스트를 넣어 주세요.');
   const title = $('newTitle').value.trim() || text.slice(0, 40) + '…';
-  const l = { id: Date.now().toString(36), title, text, created: Date.now(), u: Date.now() };
+  const l = { id: Date.now().toString(36), title, text, created: Date.now(), u: Date.now(), lang: curLang() };
   if (activeSrc === 'youtube') {
     l.video = youtubeId($('ytInput').value.trim());
     if (!l.video) return alert('유튜브 영상 주소를 확인해 주세요.');
@@ -807,7 +833,7 @@ function parseSubtitles(t) {
     if (out[out.length - 1] !== line) out.push(line);
   }
   const joined = out.join(' ').replace(/\s+/g, ' ');
-  const sents = joined.match(/[^.!?]+[.!?]*\s*/g) || [joined];
+  const sents = joined.match(/(?:[^.!?。！？]|\.(?=\d))+[.!?。！？]*\s*/g) || [joined];
   const paras = [];
   for (let i = 0; i < sents.length; i += 5) paras.push(sents.slice(i, i + 5).join('').trim());
   return paras.join('\n\n');
@@ -869,9 +895,10 @@ const MAC_RELAY = 'https://macbookpro.tail6ccc94.ts.net/api/transcript';
 const TRANSCRIPT_API ='https://script.google.com/macros/s/AKfycbyKB2nWg9Xw50mOZZNoRam7MDvTknIFhtxwmiemXClyufxf45oCyWhkOIw0V2CAleD6/exec'; // Apps Script 웹 앱
 async function fetchTranscriptApi(id) {
   const urls = [];
-  if (!location.hostname.endsWith('github.io')) urls.push(`/api/transcript?v=${id}`);
-  else urls.push(`${MAC_RELAY}?v=${id}`);
-  if (TRANSCRIPT_API) urls.push(`${TRANSCRIPT_API}?v=${id}`);
+  const q = `?v=${id}&lang=${curLang()}`;
+  if (!location.hostname.endsWith('github.io')) urls.push(`/api/transcript${q}`);
+  else urls.push(MAC_RELAY + q);
+  if (TRANSCRIPT_API) urls.push(TRANSCRIPT_API + q);
   let firstErr = null; // 집 Mac(주 경로) 오류를 보여줌 — 구글 서버의 '봇 확인' 오류는 원인을 가림
   for (const u of urls) {
     try {
@@ -1033,7 +1060,7 @@ const isTimed = () => !!(current?.video || current?.netflix); // 시간이 있�
 let current = null, selected = null, sentences = [], selSent = 0, selRange = [];
 function tokenize(s) {
   let out = '', last = 0;
-  for (const m of s.matchAll(TOKEN_RE)) {
+  for (const m of tokensOf(s)) {
     const k = norm(m[0]);
     out += esc(s.slice(last, m.index)) + `<span class="w ${cls(statusOf(k))}" data-k="${esc(k)}">${esc(m[0])}</span>`;
     last = m.index + m[0].length;
@@ -1193,7 +1220,7 @@ function mergeCues(cues) {
   let cur = null;
   for (const c of cues) {
     if (cur) cur.text += ' ' + c.text; else cur = { t: c.t, text: c.text };
-    if (/[.!?…]["”’)\]]*$/.test(c.text) || cur.text.split(' ').length >= 30) { out.push(cur); cur = null; }
+    if (/[.!?…。！？]["”’)\]」』]*$/.test(c.text) || cur.text.split(' ').length >= 30 || cur.text.length >= 160) { out.push(cur); cur = null; }
   }
   if (cur) out.push(cur);
   return out;
@@ -1204,6 +1231,7 @@ function openLesson(id) {
   current.opened = Date.now(); saveLessons();
   show('reader');
   $('readerTitle').textContent = current.title;
+  $('text').lang = curLang(); // 한자를 일본어 글꼴로
   updateFinishBtn();
   sentences = [];
   const sentSpan = s => `<span class="sent" data-i="${sentences.push(s.trim()) - 1}">${tokenize(s)} </span>`;
@@ -1215,7 +1243,7 @@ function openLesson(id) {
     $('text').innerHTML = paras.join('');
   } else {
     $('text').innerHTML = current.text.split(/\n+/).filter(p => p.trim()).map(p => {
-      const parts = p.match(/[^.!?]+(?:[.!?]+["”’)\]]*)?\s*|[.!?]+\s*/g) || [p];
+      const parts = p.match(/(?:[^.!?。！？]|\.(?=\d))+(?:[.!?。！？]+["”’)\]」』]*)?\s*|[.!?。！？]+\s*/g) || [p];
       return '<p>' + parts.map(sentSpan).join('') + '</p>';
     }).join('');
   }
@@ -1231,8 +1259,8 @@ function openLesson(id) {
 // 저장한 구문(학습 중)을 첫 단어 기준으로 묶어 둠
 function phraseIndex() {
   const by = {};
-  for (const [k, w] of Object.entries(words)) if (isPhrase(k) && isLearning(w.status)) {
-    const parts = k.split(' ');
+  for (const [k, w] of myWords()) if (isPhrase(k) && isLearning(w.status)) {
+    const parts = k.split(PH_SEP);
     (by[parts[0]] ??= []).push(parts);
   }
   return by;
@@ -1255,7 +1283,7 @@ function lingqsIn(sent) {
   keys.forEach((k, i) => {
     if (isLearning(statusOf(k)) && !out.includes(k)) out.push(k);
     for (const parts of by[k] || []) {
-      const pk = parts.join(' ');
+      const pk = phraseKey(parts);
       if (!out.includes(pk) && parts.every((p, j) => keys[i + j] === p)) out.push(pk);
     }
   });
@@ -1273,7 +1301,7 @@ function openWords(ws) {
   selSent = +sent.dataset.i;
   if (!playing && selSent !== playIdx) { playIdx = selSent; setPos(playIdx); updatePlayer(); }
   selectEls(ws);
-  openPanel(ws.map(el => el.dataset.k).join(' '), sent.textContent.trim());
+  openPanel(phraseKey(ws.map(el => el.dataset.k)), sent.textContent.trim());
 }
 const openPhrase = openWords;
 
@@ -1350,11 +1378,11 @@ function openPanel(k, example) {
   $('pSeek').classList.toggle('hidden', !isTimed());
   $('extL').classList.toggle('hidden', !selRange.length);
   $('extR').classList.toggle('hidden', !selRange.length);
-  const q = encodeURIComponent(k);
+  const q = encodeURIComponent(plain(k)), ja = curLang() === 'ja';
   $('pLinks').innerHTML =
-    `<a href="https://en.dict.naver.com/#/search?query=${q}" target="_blank">네이버 사전</a>` +
-    `<a href="https://papago.naver.com/?sk=en&tk=ko&st=${q}" target="_blank">파파고</a>` +
-    `<a href="https://youglish.com/pronounce/${q}/english" target="_blank">YouGlish</a>`;
+    `<a href="https://${ja ? 'ja' : 'en'}.dict.naver.com/#/search?query=${q}" target="_blank">네이버 사전</a>` +
+    `<a href="https://papago.naver.com/?sk=${curLang()}&tk=ko&st=${q}" target="_blank">파파고</a>` +
+    `<a href="https://youglish.com/pronounce/${q}/${ja ? 'japanese' : 'english'}" target="_blank">YouGlish</a>`;
   if (isPhrase(k)) $('pDefs').innerHTML = ''; else loadDefinitions(k);
   loadSuggestions(k);
   if (!playing) speak(k);
@@ -1383,7 +1411,7 @@ $('pSeek').onclick = () => current?.netflix ? openNetflix(segs[selSent]?.t) : se
 function setMeaning(text) {
   const k = selected;
   if (!k) return;
-  if (!words[k]) words[k] = { status: 0, meaning: '', example: '', added: Date.now() };
+  if (!words[k]) words[k] = { status: 0, meaning: '', example: '', added: Date.now(), lang: curLang() };
   words[k].meaning = text;
   touchWord(k);
   if (!words[k].example) words[k].example = $('pMeaning').dataset.example || '';
@@ -1400,7 +1428,7 @@ document.querySelectorAll('#panel .status button').forEach(b => b.onclick = () =
 // 한국어 뜻 추천 (MyMemory 무료 번역)
 const sugCache = {}, mainTrans = {};
 async function translate(text) {
-  const r = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text.slice(0, 450))}&langpair=en|ko`);
+  const r = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(plain(text).slice(0, 450))}&langpair=${curLang()}|ko`);
   return r.json();
 }
 // 번역 결과: mainTrans[k] = 대표 해석, sugCache[k] = 추천 뜻 목록(Promise, 중복 요청 방지)
@@ -1457,6 +1485,7 @@ $('pSuggest').onclick = e => {
 const defCache = {};
 async function loadDefinitions(k) {
   const box = $('pDefs');
+  if (curLang() !== 'en') { box.innerHTML = ''; return; } // 무료 사전 API는 영어만
   box.innerHTML = '<li class="muted">영영 사전 불러오는 중…</li>';
   try {
     if (!defCache[k]) {
@@ -1535,7 +1564,7 @@ $('sNext').onclick = () => gotoSent(playIdx + 1);
 
 // ---------- 오디오 (영상 레슨: 유튜브 / 텍스트 레슨: 브라우저 TTS) ----------
 let playIdx = 0, playing = false, loop = false;
-const enVoices = () => speechSynthesis.getVoices().filter(v => v.lang.startsWith('en'));
+const enVoices = () => speechSynthesis.getVoices().filter(v => v.lang.startsWith(curLang())); // 지금 언어의 목소리
 function loadVoices() {
   $('voiceSel').innerHTML = enVoices().map(v => `<option value="${esc(v.name)}" ${v.name === settings.voice ? 'selected' : ''}>${esc(v.name)} (${esc(v.lang)})</option>`).join('');
 }
@@ -1551,9 +1580,10 @@ $('rateSel').onchange = () => {
 function speak(text, onend, rate) {
   speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(text);
-  const v = enVoices().find(v => v.name === settings.voice) || enVoices().find(v => v.lang === 'en-US');
+  const def = curLang() === 'ja' ? 'ja-JP' : 'en-US';
+  const v = enVoices().find(v => v.name === settings.voice) || enVoices().find(v => v.lang === def) || enVoices()[0];
   if (v) u.voice = v;
-  u.lang = v?.lang || 'en-US';
+  u.lang = v?.lang || def;
   u.rate = rate ?? settings.rate;
   if (onend) u.onend = onend;
   speechSynthesis.speak(u);
@@ -1743,7 +1773,7 @@ document.querySelectorAll('[data-vt]').forEach(b => b.onclick = () => {
 function renderVocab() {
   const q = $('vSearch').value.trim().toLowerCase(), f = $('vFilter').value;
   const test = { learning: isLearning, known: s => s === 5, ignored: s => s === -1, all: () => true }[f];
-  const entries = Object.entries(words);
+  const entries = myWords();
   const due = new Set(dueWords().map(([k]) => k));
   $('vcAll').textContent = entries.filter(([, w]) => isLearning(w.status)).length;
   $('vcPh').textContent = entries.filter(([k, w]) => isPhrase(k) && isLearning(w.status)).length;
@@ -1751,7 +1781,7 @@ function renderVocab() {
   $('vcMem').textContent = entries.filter(([, w]) => w.mem).length;
   const rows = entries
     .filter(([k, w]) => (vTab === 'phrases' ? isPhrase(k) : vTab === 'due' ? due.has(k) : vTab === 'mem' ? w.mem : true) && (vTab === 'mem' || test(w.status))
-      && (!q || k.includes(q) || (w.meaning || '').toLowerCase().includes(q)))
+      && (!q || plain(k).includes(q) || (w.meaning || '').toLowerCase().includes(q)))
     .sort((a, b) => vTab === 'mem' ? b[1].mem - a[1].mem : b[1].added - a[1].added).slice(0, 300);
   const btns = (k, s) => [[-1, '🚫'], [1, '1'], [2, '2'], [3, '3'], [4, '4'], [5, '✓']]
     .map(([v, t]) => `<button data-s="${v}" class="${v === s ? 'on' : ''}">${t}</button>`).join('');
@@ -1779,7 +1809,7 @@ const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.f
 function startReview() {
   $('revSetup').classList.remove('hidden');
   $('flash').classList.add('hidden');
-  const pool = Object.values(words).filter(w => isLearning(w.status)).length;
+  const pool = myWords().filter(([, w]) => isLearning(w.status)).length;
   $('revPool').textContent = pool ? `학습 중인 단어·문장 ${pool.toLocaleString()}개 · 다시 볼 단어 ${dueWords().length}개` : '레슨에서 단어나 문장을 저장하면 복습할 수 있어요.';
   $('memSel').value = String(settings.memN || 3);
   const rows = Object.entries(log).filter(([, x]) => x.sessions || x.reviewed).sort((x, y) => y[0].localeCompare(x[0])).slice(0, 30);
@@ -1791,7 +1821,7 @@ function startReview() {
 $('memSel').onchange = () => { settings.memN = +$('memSel').value; saveSettings(); };
 document.querySelectorAll('[data-rn]').forEach(b => b.onclick = () => {
   const n = +b.dataset.rn;
-  const learning = Object.entries(words).filter(([, w]) => isLearning(w.status));
+  const learning = myWords().filter(([, w]) => isLearning(w.status));
   if (!learning.length) return alert('복습할 단어가 없어요. 레슨에서 단어나 문장을 저장해 주세요.');
   const again = shuffle(learning.filter(([, w]) => w.again)), rest = shuffle(learning.filter(([, w]) => !w.again));
   queue = shuffle([...again, ...rest].slice(0, n).map(([k]) => k));
@@ -1853,7 +1883,7 @@ function streak() {
   return n;
 }
 function renderStats() {
-  const vals = Object.values(words);
+  const vals = myWords().map(([, w]) => w);
   const d = log[today()] || {};
   const tile = (n, label) => `<div class="tile"><b>${n}</b><span class="muted">${label}</span></div>`;
   $('tiles').innerHTML =
@@ -2092,6 +2122,7 @@ openStore().then(() => {
   deleted = store.load('ml_deleted', []);
   Object.assign(settings, store.load('ml_settings', {}));
   $('rateSel').value = String(settings.rate);
+  paintLang();
   loadVoices();
   initCloud();
   renderStat();

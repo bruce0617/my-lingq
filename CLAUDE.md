@@ -32,6 +32,7 @@ python3 -m http.server 8765          # 정적 파일만 (자막 API 없음)
 - IndexedDB `mylingq`의 `kv` 저장소에 `ml_lessons`, `ml_words`, `ml_log`, `ml_settings`, `ml_deleted`. 시작할 때 전부 메모리(`store.cache`)로 읽고, `store.save()`가 바로 씀. IndexedDB 불가 시 localStorage로 대체. `store.ok` 전에는 저장하지 않음(빈 값 덮어쓰기 방지).
 - `words[key]` = `{status, meaning, example, added, u, ok, mem, again}`. key는 소문자 단어, 공백이 있으면 구문. status: 0 새 단어(파랑) · 1–4 학습 중(노랑) · 5 아는 단어 · -1 무시.
 - 레슨: `{id, title, text | cues:[{t,text}], video(유튜브 ID) | netflix, pos, posAt, done, u, edited}`. `cues`가 있으면 시간 있는 대본(`isTimed()`).
+- **언어별 분리**: 위 막대 `#langSel`(`settings.lang`, `LANGS`)로 공부할 언어를 고름. 레슨·단어에 `lang`(없으면 영어)이 붙고, 서재·단어장·복습·통계는 `myWords()`/`langOf()`로 지금 언어만 보여줌. 일본어 낱말은 `Intl.Segmenter`(`tokensOf`), 구문 키는 U+200B로 이음(`phraseKey`, `PH_SEP`) — 구문 키를 `' '`로 직접 만들지 말 것.
 - 다크 모드 선택만 localStorage `ml_theme`(기기별)이고, `<head>` 인라인 스크립트가 첫 렌더 전에 `html[data-theme]`을 붙임.
 
 **동기화 (Firebase, 구글 로그인 시)**: Firestore `users/{uid}/words/b{n}`(단어를 버킷으로 나눠 JSON 문자열), `lessons/{id}`, `meta/main`(log·deleted). 병합 규칙: 항목마다 `u`(수정 시각)가 큰 쪽, 보던 위치는 `posAt`가 큰 쪽, 삭제는 `deleted` 목록, 로그는 필드별 최댓값. 저장은 `schedulePush()`로 2.5초 모아서. 변경 시 `saveLessons()`/`saveWords()`/`touchWord()`를 거쳐야 `u`가 갱신되고 동기화됨.
