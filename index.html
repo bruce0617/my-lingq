@@ -152,7 +152,9 @@ header h1{font-size:17px;font-weight:600;margin-right:14px;letter-spacing:-.02em
 #nav button.active{color:var(--accent);background:var(--accent-soft)}
 #authBtn{color:var(--accent)}
 #themeBtn{background:var(--fill);border-radius:16px;padding:5px 11px}
-#langSel{width:auto;-webkit-appearance:none;appearance:none;background:var(--fill);border-radius:16px;padding:5px 11px;font-size:14px;margin-left:6px}
+/* 언어: 국기만 보이고, 누르면 투명하게 덮인 select가 '🇺🇸 영어 / 🇯🇵 일본어' 목록을 엶 */
+#langBtn{position:relative;background:var(--fill);border-radius:16px;padding:5px 11px;margin-left:6px;cursor:pointer}
+#langSel{position:absolute;inset:0;opacity:0;width:100%;cursor:pointer}
 .badge{background:#ff3b30}
 main{padding:24px}
 .card{border:.5px solid var(--edge);border-radius:12px;box-shadow:var(--lift)}
@@ -231,7 +233,7 @@ main>section:not(.hidden):not(#v-reader){animation:viewIn .32s cubic-bezier(.2,.
   header h1{font-size:32px;font-weight:700;margin:0;letter-spacing:-.03em}
   header .stat{display:none}
   #themeBtn{margin-left:auto}
-  #authBtn,#themeBtn,#langSel{background:var(--glass);border:.5px solid var(--edge);border-radius:18px;padding:6px 14px;box-shadow:var(--lift)}
+  #authBtn,#themeBtn,#langBtn{background:var(--glass);border:.5px solid var(--edge);border-radius:18px;padding:6px 14px;box-shadow:var(--lift)}
   /* 아래 탭: 화면 위에 떠 있는 유리 캡슐 (iOS 26), 고른 탭은 파란 아이콘 + 유리 하이라이트 */
   #nav{position:fixed;left:14px;right:14px;bottom:max(12px,env(safe-area-inset-bottom));z-index:8;justify-content:space-around;gap:2px;padding:6px;border-radius:32px;
     background:var(--glass);backdrop-filter:saturate(180%) blur(24px);-webkit-backdrop-filter:saturate(180%) blur(24px);border:.5px solid var(--glass-edge);box-shadow:var(--glass-shadow)}
@@ -311,7 +313,7 @@ main>section:not(.hidden):not(#v-reader){animation:viewIn .32s cubic-bezier(.2,.
   </nav>
   <span class="stat" id="stat"></span>
   <button id="themeBtn" title="다크 모드 켜기/끄기"></button>
-  <select id="langSel" title="공부할 언어"></select>
+  <label id="langBtn" title="공부할 언어"><span id="langFlag"></span><select id="langSel" aria-label="공부할 언어"></select></label>
   <button id="authBtn" class="hidden" title="구글 로그인하면 아이폰·Mac 동기화">로그인</button>
   <span class="muted" id="syncStatus"></span>
 </header>
@@ -687,9 +689,9 @@ $('themeBtn').onclick = () => {
 paintThemeBtn();
 
 // 공부할 언어 바꾸기: 서재·단어장·복습·통계가 그 언어 것만 보임
-function paintLang() { $('langSel').innerHTML = Object.entries(LANGS).map(([k, t]) => `<option value="${k}" ${k === curLang() ? 'selected' : ''}>${t.split(' ')[0]}</option>`).join(''); }
+function paintLang() { $('langSel').innerHTML = Object.entries(LANGS).map(([k, t]) => `<option value="${k}" ${k === curLang() ? 'selected' : ''}>${t}</option>`).join(''); $('langFlag').textContent = LANGS[curLang()].split(' ')[0]; }
 $('langSel').onchange = () => {
-  settings.lang = $('langSel').value; saveSettings();
+  settings.lang = $('langSel').value; saveSettings(); paintLang();
   loadVoices(); renderStat(); show('library');
 };
 
