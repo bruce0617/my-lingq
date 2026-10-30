@@ -1,0 +1,16 @@
+<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>probe</title>
+<!-- 임시: 유튜브 삽입 방식별 광고 자동 확인용 (?host=www|nocookie&v=영상ID&mode=api|iframe&w=640) -->
+<body style="margin:0;font-family:system-ui">
+<div id="box"><div id="yt"></div></div>
+<script>
+const q = new URLSearchParams(location.search);
+const host = q.get('host') === 'www' ? 'https://www.youtube.com' : 'https://www.youtube-nocookie.com';
+const v = q.get('v') || 'Mflnmsu225U', w = +(q.get('w') || 640);
+box.style.cssText = `width:${w}px;height:${Math.round(w * 9 / 16)}px`;
+if (q.get('mode') === 'iframe') {
+  yt.outerHTML = `<iframe id="yt" width="100%" height="100%" frameborder="0" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" src="${host}/embed/${v}?autoplay=0&modestbranding=1&rel=0&disablekb=1&enablejsapi=1&origin=${encodeURIComponent(location.origin)}"></iframe>`;
+} else {
+  window.onYouTubeIframeAPIReady = () => new YT.Player('yt', { host, videoId: v, width: '100%', height: '100%', playerVars: { playsinline: 1, rel: 0, modestbranding: 1, disablekb: 1, origin: location.origin } });
+  document.head.appendChild(Object.assign(document.createElement('script'), { src: 'https://www.youtube.com/iframe_api' }));
+}
+</script>
