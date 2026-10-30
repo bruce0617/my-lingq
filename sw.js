@@ -1,4 +1,4 @@
-const CACHE_NAME = 'my-lingq-shell-v2';
+const CACHE_NAME = 'my-lingq-shell-v3';
 const APP_SHELL = [
   './',
   './index.html',
@@ -6,6 +6,10 @@ const APP_SHELL = [
   './icons/icon-180.png',
   './icons/icon-192.png',
   './icons/icon-512.png',
+  './img/theme/ja-banner.webp',
+  './img/theme/ja-washi.webp',
+  './img/theme/en-banner.webp',
+  './img/theme/en-sand.webp',
 ];
 const SHELL_URLS = new Set(APP_SHELL.map(path => new URL(path, self.registration.scope).href));
 
