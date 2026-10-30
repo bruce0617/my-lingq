@@ -980,8 +980,9 @@ function loadYouTubeApi() {
 async function mountVideo(id) {
   await loadYouTubeApi();
   if (ytPlayer?.cueVideoById) { ytPlayer.cueVideoById(id, segs[playIdx]?.t || 0); return; }
-  // LingQ와 같은 삽입 설정 (www.youtube.com 공식 플레이어 — 유튜브 로그인·Premium 혜택이 그대로 적용됨)
+  // 유튜브 공식 '개인정보 보호 모드' 플레이어 (광고 비교 실험 중 — 예전엔 www.youtube.com)
   ytPlayer = new YT.Player('yt', {
+    host: 'https://www.youtube-nocookie.com',
     videoId: id,
     playerVars: { playsinline: 1, rel: 0, modestbranding: 1, disablekb: 1, origin: location.origin, start: Math.floor(segs[playIdx]?.t || 0) },
     events: {
