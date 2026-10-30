@@ -393,6 +393,7 @@ main>section:not(.hidden):not(#v-reader){animation:viewIn .32s cubic-bezier(.2,.
       <button id="pNext" title="다음 문장">⏭</button>
       <button id="fwd5" title="5초 앞으로">5⟳</button>
       <button id="loopBtn" title="현재 문장 반복">🔁</button>
+      <button id="replayBtn" title="끝나면 처음부터 자동으로 다시 재생"></button>
       <select id="rateSel" title="속도">
         <option value="0.6">0.6×</option><option value="0.75">0.75×</option><option value="0.9">0.9×</option>
         <option value="1">1×</option><option value="1.15">1.15×</option><option value="1.3">1.3×</option>
@@ -994,6 +995,8 @@ async function mountVideo(id) {
 // 영상 상태를 0.4초마다 직접 확인 — 아이폰 사파리는 재생/정지 알림이 빠지는 경우가 있어 알림에만 의존하지 않음
 function videoTick() {
   if (!isVideo() || !ytPlayer?.getPlayerState || $('v-reader').classList.contains('hidden')) return;
+  // 자동 다시보기: 영상이 끝나면(상태 0) 처음부터 다시
+  if (settings.replay && ytPlayer.getPlayerState() === 0) { ytPlayer.seekTo(0, true); ytPlayer.playVideo(); return; }
   const isPlaying = ytPlayer.getPlayerState() === 1;
   if (isPlaying !== playing) {
     playing = isPlaying;
@@ -1605,6 +1608,8 @@ function updatePlayer() {
   $('ccToggle').textContent = settings.cc ? '💬 자막 ON' : '💬 자막 OFF';
   $('ccToggle').classList.toggle('on', settings.cc);
   $('loopBtn').classList.toggle('on', loop);
+  $('replayBtn').textContent = settings.replay ? '🔄 다시보기 ON' : '🔄 다시보기 OFF';
+  $('replayBtn').classList.toggle('on', !!settings.replay);
   for (const id of ['back5', 'fwd5', 'videoToggle']) $(id).classList.toggle('hidden', !v);
   $('videoToggle').textContent = settings.video ? '📺 영상 ON' : '📺 영상 OFF';
   $('videoToggle').classList.toggle('on', settings.video);
@@ -1646,7 +1651,7 @@ function scrollToCurrent() {
   window.scrollBy({ top: el.getBoundingClientRect().top - top - (innerHeight - top) / 3, behavior: 'smooth' });
 }
 function playFrom(i) {
-  if (i >= sentences.length) { stopPlay(); playIdx = 0; updatePlayer(); return; }
+  if (i >= sentences.length) { if (settings.replay) return playFrom(0); stopPlay(); playIdx = 0; updatePlayer(); return; }
   playIdx = Math.max(0, i); playing = true;
   setPos(playIdx);
   updatePlayer();
@@ -1681,6 +1686,7 @@ $('pNext').onclick = () => gotoSent(playIdx + 1);
 $('back5').onclick = () => ytPlayer?.seekTo?.(Math.max(0, ytPlayer.getCurrentTime() - 5), true);
 $('fwd5').onclick = () => ytPlayer?.seekTo?.(ytPlayer.getCurrentTime() + 5, true);
 $('loopBtn').onclick = () => { loop = !loop; updatePlayer(); };
+$('replayBtn').onclick = () => { settings.replay = !settings.replay; saveSettings(); updatePlayer(); };
 $('videoToggle').onclick = () => { settings.video = !settings.video; saveSettings(); updatePlayer(); };
 $('ccToggle').onclick = () => {
   settings.cc = !settings.cc; saveSettings();
