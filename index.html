@@ -212,6 +212,7 @@ main>section:not(.hidden):not(#v-reader){animation:viewIn .32s cubic-bezier(.2,.
 .card.list button{display:flex;width:100%;align-items:center;justify-content:space-between;background:none;border-radius:0;padding:14px 16px;font-size:16px;text-align:left}
 .card.list button+button{border-top:.5px solid var(--line)}
 .card.list button::after{content:"›";color:var(--muted);font-size:22px;line-height:1}
+.card.list button{justify-content:flex-start;gap:8px}.card.list button::after{margin-left:auto} /* 아이콘 + 글자는 왼쪽, › 는 오른쪽 끝 */
 /* 복습 */
 [data-rn]{min-width:84px;padding:12px 0;font-size:17px;border-radius:14px}
 .flash{padding:36px 20px}
@@ -419,9 +420,70 @@ html:is([data-lang=en],[data-lang=ja]) #lessonList .lcard::after{
 }
 html[data-lang=en] #lessonList .lcard::after{border-radius:50%;border-style:double;border-width:2px;width:24px;height:8px;top:1px}
 html[data-lang=ja] #lessonList .lcard::after{border-radius:1px;background:repeating-linear-gradient(90deg,transparent 0 3px,var(--accent) 3px 4px)}
+/* 버튼 아이콘: 글자 크기에 맞춤 */
+.ic{width:1.25em;height:1.25em;vertical-align:-.25em;flex:none;display:inline-block}
+button .ic+span,button .ic{pointer-events:none}
+/* 색이 채워진 버튼(주요·켜짐·큰 재생) 안에서는 아이콘을 흰색으로 — 강조색 부분이 바탕에 묻히지 않게 */
+button.primary .ic,button.on .ic,#bPlay .ic,.tabs button.on .ic,.status button.on .ic{--accent:#fff;--thumb:#fff;--l1:rgba(255,255,255,.75);--text:#fff}
+:is(button.primary,button.on,.tabs button.on,.status button.on) .ic use[href="#i-check"]{--accent:rgba(255,255,255,.28)} /* 체크: 흰 원 위 흰 체크가 되지 않게 원만 옅게 */
 </style>
 </head>
 <body>
+<!-- 버튼 아이콘 (Codex 지중해 세트, 이모지 대체) -->
+<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" aria-hidden="true" style="position:absolute;overflow:hidden;pointer-events:none">
+  <!-- 듣기 -->
+  <symbol id="i-listen" viewBox="0 0 24 24"><path fill="var(--thumb, #258b93)" d="M2 9q0-1 1-1h3l5-4q2-1 2 1v14q0 2-2 1l-5-4H3q-1 0-1-1Z" /><path fill="var(--accent, #ec7056)" d="M16 7a7 7 0 0 1 0 10l-1.7-2a4.4 4.4 0 0 0 0-6Zm3-4a12 12 0 0 1 0 18l-1.8-2a9.2 9.2 0 0 0 0-14Z" /></symbol>
+  <!-- 저장 -->
+  <symbol id="i-save" viewBox="0 0 24 24"><path fill="var(--thumb, #258b93)" d="M5 2h12l5 5v12q0 3-3 3H5q-3 0-3-3V5q0-3 3-3Z" /><rect fill="var(--accent, #ec7056)" x="6" y="3" width="9" height="6" rx="0.8"/><rect fill="var(--accent, #ec7056)" x="6" y="13" width="12" height="8" rx="3"/><rect fill="var(--l1, #e8b65d)" x="13" y="4" width="2" height="4" rx="0.5"/></symbol>
+  <!-- 문장 통째로 저장 -->
+  <symbol id="i-save-sentence" viewBox="0 0 24 24"><path fill="var(--thumb, #258b93)" d="M6 2h8l6 6v11q0 3-3 3H6q-3 0-3-3V5q0-3 3-3Z" /><path fill="var(--accent, #ec7056)" d="M14 2v4q0 2 2 2h4Z" /><rect fill="var(--accent, #ec7056)" x="6" y="7" width="5" height="2" rx="1"/><rect fill="var(--accent, #ec7056)" x="6" y="11" width="9" height="2" rx="1"/><path fill="var(--l1, #e8b65d)" d="M14 13h7v10l-3.5-2.5L14 23Z" /></symbol>
+  <!-- 천천히 -->
+  <symbol id="i-slow" viewBox="0 0 24 24"><path fill="var(--thumb, #258b93)" d="M4 13a7.5 7.5 0 0 1 15 0q-7.5 5-15 0Z" /><circle fill="var(--accent, #ec7056)" cx="20" cy="12" r="3"/><rect fill="var(--accent, #ec7056)" x="5" y="15" width="3" height="4" rx="1.5"/><rect fill="var(--accent, #ec7056)" x="14" y="15" width="3" height="4" rx="1.5"/><path fill="var(--accent, #ec7056)" d="M4 12 1 14l4 1Z" /><path fill="var(--l1, #e8b65d)" d="M9 8h4l2 4-3 2-4-2Z" /><circle fill="var(--thumb, #258b93)" cx="21" cy="11.5" r="0.7"/></symbol>
+  <!-- 이 장면 -->
+  <symbol id="i-scene" viewBox="0 0 24 24"><rect fill="var(--thumb, #258b93)" x="2" y="8" width="20" height="13" rx="3"/><path fill="var(--accent, #ec7056)" d="M2 4 20 1l2 5L3 9Z" /><path fill="var(--l1, #e8b65d)" d="m5 4 3-.5 2 3-3 .5Zm7-1 3-.5 2 3-3 .5Z" /><path fill="var(--accent, #ec7056)" d="M10 11.5q0-.8 1-.3l6 3.4q.8.4 0 .9l-6 3.3q-1 .6-1-.4Z" /></symbol>
+  <!-- 문장 반복 -->
+  <symbol id="i-repeat" viewBox="0 0 24 24"><path fill="var(--thumb, #258b93)" d="M6 3h11V0l6 5-6 5V7H6q-2 0-2 2v2H1V9q0-6 5-6Z" /><path fill="var(--accent, #ec7056)" d="M18 21H7v3l-6-5 6-5v3h11q2 0 2-2v-2h3v2q0 6-5 6Z" /><rect fill="var(--l1, #e8b65d)" x="8" y="10" width="8" height="3" rx="1"/></symbol>
+  <!-- 다시보기 -->
+  <symbol id="i-review" viewBox="0 0 24 24"><path fill="var(--thumb, #258b93)" d="M6 5a10 10 0 1 1-3 12l3-1.6A6.5 6.5 0 1 0 8.5 8L12 11H1V1Z" /><path fill="var(--accent, #ec7056)" d="M11 8h3v5l4 2-1.5 2.5L11 14Z" /></symbol>
+  <!-- 영상 -->
+  <symbol id="i-video" viewBox="0 0 24 24"><rect fill="var(--thumb, #258b93)" x="2" y="3" width="20" height="16" rx="3"/><rect fill="var(--accent, #ec7056)" x="8" y="20" width="8" height="2" rx="1"/><path fill="var(--accent, #ec7056)" d="M9 7q0-1 1-.5l7 4.2q1 .6 0 1.2l-7 4q-1 .6-1-.5Z" /></symbol>
+  <!-- 자막 -->
+  <symbol id="i-subtitles" viewBox="0 0 24 24"><path fill="var(--thumb, #258b93)" d="M5 3h14q3 0 3 3v10q0 3-3 3H10l-5 4v-4q-3 0-3-3V6q0-3 3-3Z" /><rect fill="var(--accent, #ec7056)" x="5" y="8" width="5" height="3" rx="1"/><rect fill="var(--accent, #ec7056)" x="12" y="8" width="7" height="3" rx="1"/><rect fill="var(--accent, #ec7056)" x="5" y="13" width="9" height="3" rx="1"/><rect fill="var(--l1, #e8b65d)" x="16" y="13" width="3" height="3" rx="1"/></symbol>
+  <!-- 문장 보기 -->
+  <symbol id="i-sentence" viewBox="0 0 24 24"><rect fill="var(--accent, #ec7056)" x="2" y="4" width="20" height="16" rx="3"/><rect fill="var(--thumb, #258b93)" x="5" y="7" width="14" height="3" rx="1"/><rect fill="var(--thumb, #258b93)" x="5" y="12" width="9" height="3" rx="1"/><path fill="var(--l1, #e8b65d)" d="m17 11 5 4-5 4Z" /></symbol>
+  <!-- 페이지 / 글 -->
+  <symbol id="i-page" viewBox="0 0 24 24"><path fill="var(--thumb, #258b93)" d="M6 2h8l6 6v11q0 3-3 3H6q-3 0-3-3V5q0-3 3-3Z" /><path fill="var(--accent, #ec7056)" d="M14 2v4q0 2 2 2h4Z" /><rect fill="var(--accent, #ec7056)" x="7" y="11" width="10" height="2" rx="1"/><rect fill="var(--accent, #ec7056)" x="7" y="15" width="7" height="2" rx="1"/></symbol>
+  <!-- 편집 -->
+  <symbol id="i-edit" viewBox="0 0 24 24"><path fill="var(--thumb, #258b93)" d="m3 16 12-12 5 5L8 21l-6 1Z" /><path fill="var(--accent, #ec7056)" d="m16 3 2-2q1-1 2 0l3 3q1 1 0 2l-2 2Z" /><path fill="var(--l1, #e8b65d)" d="m3 16 5 5-6 1Z" /></symbol>
+  <!-- 삭제 -->
+  <symbol id="i-delete" viewBox="0 0 24 24"><path fill="var(--thumb, #258b93)" d="M5 8h14l-1 12q0 2-3 2H9q-3 0-3-2Z" /><rect fill="var(--accent, #ec7056)" x="3" y="4" width="18" height="3" rx="1.5"/><rect fill="var(--accent, #ec7056)" x="8" y="1" width="8" height="3" rx="1.4"/><rect fill="var(--accent, #ec7056)" x="9" y="10" width="2" height="8" rx="1"/><rect fill="var(--accent, #ec7056)" x="13" y="10" width="2" height="8" rx="1"/></symbol>
+  <!-- 나누기 -->
+  <symbol id="i-split" viewBox="0 0 24 24"><path fill="var(--thumb, #258b93)" d="M4 2q-1-2-2 0l8 12 3-2Z" /><path fill="var(--accent, #ec7056)" d="M20 2q1-2 2 0l-8 12-3-2Z" /><path fill="var(--thumb, #258b93)" d="M6 13a5 5 0 1 0 5 5l3-4-3-3-3 3Zm0 3a2 2 0 1 1 0 4 2 2 0 0 1 0-4Z" fill-rule="evenodd"/><path fill="var(--accent, #ec7056)" d="M18 13a5 5 0 1 1-5 5l-3-4 3-3 3 3Zm0 3a2 2 0 1 0 0 4 2 2 0 0 0 0-4Z" fill-rule="evenodd"/><circle fill="var(--l1, #e8b65d)" cx="12" cy="12" r="1.6"/></symbol>
+  <!-- 암기 완료 -->
+  <symbol id="i-mastered" viewBox="0 0 24 24"><path fill="var(--thumb, #258b93)" d="M11 3C7 0 4 3 4 6 0 7 1 12 3 13 0 17 5 22 8 20q3 3 3-1ZM13 3c4-3 7 0 7 3 4 1 3 6 1 7 3 4-2 9-5 7q-3 3-3-1Z" /><path fill="var(--accent, #ec7056)" d="m12 15 3 3 6-7 2 2-8 9-5-5Z" /></symbol>
+  <!-- 동기화 -->
+  <symbol id="i-sync" viewBox="0 0 24 24"><path fill="var(--accent, #ec7056)" d="M7 17H5a5 5 0 0 1-1-10 8 8 0 0 1 15-1 5.5 5.5 0 0 1 0 11h-2v-4H7Z" /><path fill="var(--thumb, #258b93)" d="M10 10v11H7V10H4l4.5-5L13 10Z" /><path fill="var(--l1, #e8b65d)" d="M17 12v7h3l-4.5 5-4.5-5h3v-7Z" /></symbol>
+  <!-- 다크 모드 -->
+  <symbol id="i-moon" viewBox="0 0 24 24"><path fill="var(--thumb, #258b93)" d="M16.5 2a10 10 0 1 0 5.4 13.5A8 8 0 0 1 16.5 2Z" /><path fill="var(--accent, #ec7056)" d="m19 3 1 3 3 1-3 1-1 3-1-3-3-1 3-1Z" /></symbol>
+  <!-- 라이트 모드 -->
+  <symbol id="i-sun" viewBox="0 0 24 24"><g transform="rotate(0 12 12)"><rect fill="var(--accent, #ec7056)" x="10.6" y="0" width="2.8" height="4" rx="1.4"/></g><g transform="rotate(45 12 12)"><rect fill="var(--accent, #ec7056)" x="10.6" y="0" width="2.8" height="4" rx="1.4"/></g><g transform="rotate(90 12 12)"><rect fill="var(--accent, #ec7056)" x="10.6" y="0" width="2.8" height="4" rx="1.4"/></g><g transform="rotate(135 12 12)"><rect fill="var(--accent, #ec7056)" x="10.6" y="0" width="2.8" height="4" rx="1.4"/></g><g transform="rotate(180 12 12)"><rect fill="var(--accent, #ec7056)" x="10.6" y="0" width="2.8" height="4" rx="1.4"/></g><g transform="rotate(225 12 12)"><rect fill="var(--accent, #ec7056)" x="10.6" y="0" width="2.8" height="4" rx="1.4"/></g><g transform="rotate(270 12 12)"><rect fill="var(--accent, #ec7056)" x="10.6" y="0" width="2.8" height="4" rx="1.4"/></g><g transform="rotate(315 12 12)"><rect fill="var(--accent, #ec7056)" x="10.6" y="0" width="2.8" height="4" rx="1.4"/></g><circle fill="var(--thumb, #258b93)" cx="12" cy="12" r="6.1"/><circle fill="var(--l1, #e8b65d)" cx="10" cy="10" r="1.8"/></symbol>
+  <!-- 재생 -->
+  <symbol id="i-play" viewBox="0 0 24 24"><circle fill="var(--accent, #ec7056)" cx="12" cy="12" r="11"/><path fill="var(--thumb, #258b93)" d="M9 6q0-1 1-.4l9 5.5q1 .8 0 1.5l-9 5.8q-1 .6-1-.4Z" /></symbol>
+  <!-- 일시정지 -->
+  <symbol id="i-pause" viewBox="0 0 24 24"><rect fill="var(--thumb, #258b93)" x="4" y="3" width="6" height="18" rx="3"/><rect fill="var(--accent, #ec7056)" x="14" y="3" width="6" height="18" rx="3"/></symbol>
+  <!-- 이전 -->
+  <symbol id="i-previous" viewBox="0 0 24 24"><rect fill="var(--accent, #ec7056)" x="2" y="4" width="4" height="16" rx="1.5"/><path fill="var(--thumb, #258b93)" d="M20 4q1-1 1 1v14q0 2-1 1L8 13q-1-1 0-2Z" /></symbol>
+  <!-- 다음 -->
+  <symbol id="i-next" viewBox="0 0 24 24"><g transform="translate(24 0) scale(-1 1)"><rect fill="var(--accent, #ec7056)" x="2" y="4" width="4" height="16" rx="1.5"/><path fill="var(--thumb, #258b93)" d="M20 4q1-1 1 1v14q0 2-1 1L8 13q-1-1 0-2Z" /></g></symbol>
+  <!-- 무시 -->
+  <symbol id="i-ignore" viewBox="0 0 24 24"><path fill="var(--accent, #ec7056)" d="M12 1a11 11 0 1 0 0 22 11 11 0 0 0 0-22Zm0 4a7 7 0 1 1 0 14 7 7 0 0 1 0-14Z" fill-rule="evenodd"/><path fill="var(--thumb, #258b93)" d="m4 6 2-2 14 14-2 2Z" /></symbol>
+  <!-- 복습 -->
+  <symbol id="i-flashcards" viewBox="0 0 24 24"><g transform="rotate(-12 11 12)"><rect fill="var(--accent, #ec7056)" x="2" y="3" width="15" height="18" rx="3"/></g><rect fill="var(--thumb, #258b93)" x="7" y="5" width="15" height="18" rx="3"/><path fill="var(--l1, #e8b65d)" d="m14.5 8 1.6 4 4.4.4-3.3 2.8 1 4.2-3.7-2.2-3.7 2.2 1-4.2-3.3-2.8 4.4-.4Z" /></symbol>
+  <!-- 가져오기 -->
+  <symbol id="i-import" viewBox="0 0 24 24"><path fill="var(--accent, #ec7056)" d="M2 14h5v4h10v-4h5v6q0 2-2 2H4q-2 0-2-2Z" /><path fill="var(--thumb, #258b93)" d="M10 1h4v9h5l-7 8-7-8h5Z" /></symbol>
+  <!-- 아는 단어 / 완료 -->
+  <symbol id="i-check" viewBox="0 0 24 24"><circle fill="var(--accent, #ec7056)" cx="12" cy="12" r="11"/><path fill="var(--thumb, #258b93)" d="M3.7 11.7q1-1 2.1 0l4 4 8.4-10q1-1.2 2.2-.2t.2 2.2L11 19q-1 1.2-2.2.1l-5.1-5.2q-1.1-1.1 0-2.2Z" /></symbol>
+</svg>
 <header>
   <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><linearGradient id="g-accent" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6fb4ff"/><stop offset="1" stop-color="#2f6fec"/></linearGradient></defs></svg>
   <h1>My LingQ</h1>
@@ -445,12 +507,12 @@ html[data-lang=ja] #lessonList .lcard::after{border-radius:1px;background:repeat
     <div class="row" style="margin:4px 0 12px">
       <h2 style="margin:0;font-size:20px"><span id="libLang">내</span> 레슨 <span class="muted" id="libCount"></span></h2>
       <div class="row tabs" style="margin-left:auto">
-        <button data-lf="all" class="on">전체</button><button data-lf="reading">진행 중</button><button data-lf="video">영상</button><button data-lf="text">글</button><button data-lf="done">✓ 다 읽음</button>
+        <button data-lf="all" class="on">전체</button><button data-lf="reading">진행 중</button><button data-lf="video">영상</button><button data-lf="text">글</button><button data-lf="done"><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg> 다 읽음</button>
       </div>
     </div>
     <div id="lessonList"></div>
     <div class="card list">
-      <button id="lingqImport">⬇️ LingQ 기록 가져오기</button>
+      <button id="lingqImport"><svg class="ic" aria-hidden="true"><use href="#i-import"/></svg> LingQ 기록 가져오기</button>
       <button id="exportBtn">백업 내보내기</button>
       <button id="importBtn" type="button">백업 불러오기</button>
       <input type="file" id="importFile" accept=".json" class="hidden">
@@ -463,7 +525,7 @@ html[data-lang=ja] #lessonList .lcard::after{border-radius:1px;background:repeat
     <div class="card">
       <div class="row tabs" style="margin-bottom:10px">
         <b style="margin-right:4px">가져올 곳</b>
-        <button data-src="youtube" class="on">🎬 유튜브</button>
+        <button data-src="youtube" class="on"><svg class="ic" aria-hidden="true"><use href="#i-video"/></svg> 유튜브</button>
         <button data-src="netflix">🎞 넷플릭스</button>
         <button data-src="paste">붙여넣기</button>
         <button data-src="url">웹 기사 링크</button>
@@ -502,18 +564,18 @@ html[data-lang=ja] #lessonList .lcard::after{border-radius:1px;background:repeat
       <button data-view="library">←<span class="lbl"> 서재</span></button>
       <b id="readerTitle" style="flex:1;min-width:120px"></b>
       <span class="muted" id="pageInfo"></span>
-      <button id="editLesson">✏️<span class="lbl"> 편집</span></button>
-      <button id="finishPage" class="primary" title="파란 단어를 모두 '아는 단어'로">✓ 다 읽었어요</button>
+      <button id="editLesson" aria-label="편집"><svg class="ic" aria-hidden="true"><use href="#i-edit"/></svg><span class="lbl"> 편집</span></button>
+      <button id="finishPage" class="primary" title="다 읽음으로 표시"><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg> 다 읽었어요</button>
     </div>
     <div id="readTop" class="readtop">
     <div class="card row player" style="padding:10px 12px">
-      <button id="nfOpen" class="primary hidden" title="지금 문장 시간으로 넷플릭스 열기">▶ 넷플릭스에서 이 장면</button>
+      <button id="nfOpen" class="primary hidden" title="지금 문장 시간으로 넷플릭스 열기"><svg class="ic" aria-hidden="true"><use href="#i-play"/></svg> 넷플릭스에서 이 장면</button>
       <button id="back5" title="5초 뒤로">⟲5</button>
-      <button id="pPrev" title="이전 문장">⏮</button>
+      <button id="pPrev" title="이전 문장" aria-label="이전 문장"><svg class="ic" aria-hidden="true"><use href="#i-previous"/></svg></button>
       <button id="pPlay" class="primary" style="min-width:72px">▶ 재생</button>
-      <button id="pNext" title="다음 문장">⏭</button>
+      <button id="pNext" title="다음 문장" aria-label="다음 문장"><svg class="ic" aria-hidden="true"><use href="#i-next"/></svg></button>
       <button id="fwd5" title="5초 앞으로">5⟳</button>
-      <button id="loopBtn" title="현재 문장 반복">🔁</button>
+      <button id="loopBtn" title="현재 문장 반복" aria-label="현재 문장 반복"><svg class="ic" aria-hidden="true"><use href="#i-repeat"/></svg></button>
       <button id="replayBtn" title="끝나면 처음부터 자동으로 다시 재생"></button>
       <select id="rateSel" title="속도">
         <option value="0.6">0.6×</option><option value="0.75">0.75×</option><option value="0.9">0.9×</option>
@@ -539,7 +601,7 @@ html[data-lang=ja] #lessonList .lcard::after{border-radius:1px;background:repeat
         <div class="card hidden" id="sentExtra">
           <div class="row sx">
             <button id="sPrev">‹ 이전</button>
-            <span class="row sxm"><button id="sSpeak">🔊 문장</button><button id="sSlow">🐢 천천히</button><button id="sTrans"></button></span>
+            <span class="row sxm"><button id="sSpeak"><svg class="ic" aria-hidden="true"><use href="#i-listen"/></svg> 문장</button><button id="sSlow"><svg class="ic" aria-hidden="true"><use href="#i-slow"/></svg> 천천히</button><button id="sTrans"></button></span>
             <button id="sNext">다음 ›</button>
           </div>
           <div id="sTransText" class="hidden"></div>
@@ -551,27 +613,27 @@ html[data-lang=ja] #lessonList .lcard::after{border-radius:1px;background:repeat
         <button id="pGrab" class="hidden-desk" aria-label="단어 창 크게/작게" title="누르거나 위로 밀면 크게"></button>
         <div class="row" style="justify-content:space-between;flex-wrap:nowrap">
           <span class="word" id="pWord"></span>
-          <span style="white-space:nowrap"><button id="pSpeak">🔊</button> <button id="pClose">✕</button></span>
+          <span style="white-space:nowrap"><button id="pSpeak" aria-label="듣기"><svg class="ic" aria-hidden="true"><use href="#i-listen"/></svg></button> <button id="pClose">✕</button></span>
         </div>
         <div class="ex" id="pEx"></div>
         <div id="pTrans" class="hidden"></div>
         <div class="chips row" id="pSuggest"></div>
         <div class="row" style="margin:6px 0">
           <button id="pSave" class="primary">💾 저장</button>
-          <button id="pSaveSent">📌 문장 통째로 저장</button>
+          <button id="pSaveSent"><svg class="ic" aria-hidden="true"><use href="#i-save-sentence"/></svg> 문장 통째로 저장</button>
         </div>
         <div class="row" style="margin:6px 0">
           <button id="extL" title="앞 단어까지 구문으로">◀ +</button>
           <button id="extR" title="뒤 단어까지 구문으로">+ ▶</button>
-          <button id="pSentSpeak">🔊 문장</button>
-          <button id="pSeek" class="hidden">🎬 이 장면</button>
+          <button id="pSentSpeak"><svg class="ic" aria-hidden="true"><use href="#i-listen"/></svg> 문장</button>
+          <button id="pSeek" class="hidden"><svg class="ic" aria-hidden="true"><use href="#i-scene"/></svg> 이 장면</button>
         </div>
         <label class="muted">내 뜻 (입력하면 자동 저장)</label>
         <textarea id="pMeaning" rows="2" placeholder="예: 끈질긴, 집요한"></textarea>
         <div class="row status" style="margin:10px 0">
-          <button data-s="-1" title="무시 (고유명사 등)">🚫</button>
+          <button data-s="-1" title="무시 (고유명사 등)" aria-label="무시"><svg class="ic" aria-hidden="true"><use href="#i-ignore"/></svg></button>
           <button data-s="1">1</button><button data-s="2">2</button><button data-s="3">3</button><button data-s="4">4</button>
-          <button data-s="5" title="아는 단어">✓</button>
+          <button data-s="5" title="아는 단어" aria-label="아는 단어"><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg></button>
         </div>
         <div class="links" id="pLinks"></div>
         <ol class="defs" id="pDefs"></ol>
@@ -584,7 +646,7 @@ html[data-lang=ja] #lessonList .lcard::after{border-radius:1px;background:repeat
     <div id="bbar">
       <button id="bPlay" title="재생 (영상은 이때 나타남)">▶</button>
       <button id="bView"></button>
-      <button id="bReview" title="이 레슨에서 학습 중인 단어 먼저 복습">🃏 복습 <span id="bCount"></span></button>
+      <button id="bReview" title="이 레슨에서 학습 중인 단어 먼저 복습"><svg class="ic" aria-hidden="true"><use href="#i-flashcards"/></svg> 복습 <span id="bCount"></span></button>
     </div>
   </section>
 
@@ -593,7 +655,7 @@ html[data-lang=ja] #lessonList .lcard::after{border-radius:1px;background:repeat
     <div class="card">
       <!-- 스크롤해도 위에 붙어 있는 도구 막대 -->
       <div class="row etools" id="eTools">
-        <b style="margin-right:auto">✏️ 레슨 편집</b>
+        <b style="margin-right:auto"><svg class="ic" aria-hidden="true"><use href="#i-edit"/></svg> 레슨 편집</b>
         <button id="eUndo" title="되돌리기 (⌘Z / Ctrl+Z)">↶ 되돌리기</button>
         <button id="eRedo" title="다시 실행 (⌘⇧Z / Ctrl+Y)">↷ 다시 실행</button>
         <button class="primary" id="eSave">저장</button>
@@ -612,7 +674,7 @@ html[data-lang=ja] #lessonList .lcard::after{border-radius:1px;background:repeat
         <button data-vt="all" class="on">전체 <span class="muted" id="vcAll"></span></button>
         <button data-vt="phrases">구문 <span class="muted" id="vcPh"></span></button>
         <button data-vt="due">다시 볼 단어 <span class="muted" id="vcDue"></span></button>
-        <button data-vt="mem">🧠 암기 <span class="muted" id="vcMem"></span></button>
+        <button data-vt="mem"><svg class="ic" aria-hidden="true"><use href="#i-mastered"/></svg> 암기 <span class="muted" id="vcMem"></span></button>
       </div>
       <div class="row">
         <input id="vSearch" placeholder="검색" style="flex:1;min-width:140px">
@@ -642,12 +704,12 @@ html[data-lang=ja] #lessonList .lcard::after{border-radius:1px;background:repeat
         <div class="row" style="justify-content:center;margin-top:12px">
           <span class="muted">'알았어요'</span>
           <select id="memSel" style="width:auto"><option value="3">3번</option><option value="5">5번</option><option value="7">7번</option></select>
-          <span class="muted">채우면 🧠 암기 완료</span>
+          <span class="muted">채우면 <svg class="ic" aria-hidden="true"><use href="#i-mastered"/></svg> 암기 완료</span>
         </div>
       </div>
       <div class="card" style="margin-top:12px">
         <b>복습 기록</b>
-        <table style="margin-top:8px"><thead><tr><th>날짜</th><th>복습 횟수</th><th>본 카드</th><th>🧠 암기 완료</th></tr></thead><tbody id="revHist"></tbody></table>
+        <table style="margin-top:8px"><thead><tr><th>날짜</th><th>복습 횟수</th><th>본 카드</th><th><svg class="ic" aria-hidden="true"><use href="#i-mastered"/></svg> 암기 완료</th></tr></thead><tbody id="revHist"></tbody></table>
       </div>
     </div>
     <div class="card flash hidden" id="flash"></div>
@@ -724,6 +786,8 @@ function bump(field, n = 1) {
 }
 
 // 상태: 0 새 단어(파랑) · 1~4 학습 중(노랑) · 5 아는 단어 · -1 무시
+// 버튼 아이콘 (body 맨 앞 스프라이트의 #i-이름)
+const ic = n => `<svg class="ic" aria-hidden="true"><use href="#i-${n}"/></svg>`;
 const isNum = k => /^[$€£¥₩]?[\d０-９]/.test(k);
 const statusOf = k => words[k]?.status ?? (isNum(k) ? 5 : 0); // 숫자는 기본 '아는 단어'(파란 표시·새 단어 수에서 빠짐)
 const cls = s => s === 0 ? 'sn' : s >= 1 && s <= 4 ? 's' + s : '';
@@ -790,7 +854,7 @@ document.querySelectorAll('[data-view]').forEach(b => b.onclick = () => { revFoc
 const isDark = () => document.documentElement.dataset.theme ? document.documentElement.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
 // 버튼 + 화면 위·아래 시스템 영역 색(theme-color)을 지금 모드에 맞춤 — 기기가 다크여도 앱이 밝으면 밝게
 const paintThemeBtn = () => {
-  $('themeBtn').textContent = isDark() ? '☀️' : '🌙';
+  $('themeBtn').innerHTML = ic(isDark() ? 'sun' : 'moon');
   // 아이폰은 theme-color 값만 바꾸면 무시할 때가 있어서 태그를 새로 끼워 넣음
   const m = $('themeColor'), n = m.cloneNode();
   n.content = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
@@ -872,9 +936,9 @@ function renderLibrary() {
     const thumb = l.video ? `style="background-image:url('https://i.ytimg.com/vi/${l.video}/mqdefault.jpg')"` : l.netflix ? 'style="background:#141414;color:#e50914"' : `style="background:${coverOf(l.title)}"`;
     return `<div class="lcard" data-open="${l.id}">
       <div class="thumb" ${thumb}>${l.video ? '' : l.netflix ? 'N' : esc((l.title.match(/[\p{L}\p{N}]/u) || ['📄'])[0].toUpperCase())}
-        ${l.done ? '<span class="donemark">✓ 다 읽음</span>' : ''}${l.cues?.length ? `<span class="dur">${fmtLen(l.cues[l.cues.length - 1].t)}</span>` : ''}</div>
+        ${l.done ? `<span class="donemark">${ic('check')} 다 읽음</span>` : ''}${l.cues?.length ? `<span class="dur">${fmtLen(l.cues[l.cues.length - 1].t)}</span>` : ''}</div>
       <div class="lbody"><b>${esc(l.title)}</b>
-        <div class="lchips"><span>${l.video ? '▶ 영상' : l.netflix ? 'N 넷플릭스' : '📄 글'}</span><span class="plain new">새 단어 ${st.unknown}</span>${st.lingqs ? `<span class="plain lrn">학습 중 ${st.lingqs}</span>` : ''}</div>
+        <div class="lchips"><span>${l.video ? ic('video') + ' 영상' : l.netflix ? 'N 넷플릭스' : ic('page') + ' 글'}</span><span class="plain new">새 단어 ${st.unknown}</span>${st.lingqs ? `<span class="plain lrn">학습 중 ${st.lingqs}</span>` : ''}</div>
         <div class="kbar" title="이 레슨에서 아는 단어 비율"><i><b style="width:${100 - pct}%"></b></i>아는 단어 ${100 - pct}%</div>
         <div class="lfoot"><button class="ldel" data-del="${l.id}" title="삭제">삭제</button></div></div></div>`;
   }).join('') + '</div>';
@@ -1252,9 +1316,9 @@ function eRender(focusIdx, caret) {
       ${video ? `<input class="etime" value="${fmtTime(r.t)}" title="영상 시간 (분:초)">` : `<span class="etime">${i + 1}</span>`}
       <textarea class="etext" rows="1">${esc(r.text)}</textarea>
       <span class="eops">
-        <button data-op="split" title="커서 위치에서 둘로 나누기">✂️</button>
+        <button data-op="split" title="커서 위치에서 둘로 나누기" aria-label="나누기">${ic('split')}</button>
         <button data-op="merge" title="윗${video ? '문장' : '문단'}과 합치기" ${i ? '' : 'disabled'}>⤴</button>
-        <button data-op="del" title="삭제">🗑</button>
+        <button data-op="del" title="삭제" aria-label="삭제">${ic('delete')}</button>
       </span></div>`;
   });
   $('eRows').innerHTML = html || '<div class="muted">내용이 없어요. ↶ 되돌리기로 복구할 수 있어요.</div>';
@@ -1272,8 +1336,8 @@ function openEditor() {
     ? segs.map(c => ({ t: c.t, text: c.text }))
     : current.text.split(/\n+/).map(p => p.trim()).filter(Boolean).map(text => ({ text }));
   $('eHint').innerHTML = isTimed()
-    ? '문장마다 한 칸이에요. <b>✂️</b> 커서를 둔 곳에서 나누기 · <b>⤴</b> 윗문장과 합치기 · <b>🗑</b> 삭제 · 왼쪽 시간(0:12)을 고치면 영상 위치가 바뀌어요.'
-    : '문단마다 한 칸이에요. <b>✂️</b> 커서를 둔 곳에서 나누기 · <b>⤴</b> 윗문단과 합치기 · <b>🗑</b> 삭제';
+    ? `문장마다 한 칸이에요. <b>${ic('split')}</b> 커서를 둔 곳에서 나누기 · <b>⤴</b> 윗문장과 합치기 · <b>${ic('delete')}</b> 삭제 · 왼쪽 시간(0:12)을 고치면 영상 위치가 바뀌어요.`
+    : `문단마다 한 칸이에요. <b>${ic('split')}</b> 커서를 둔 곳에서 나누기 · <b>⤴</b> 윗문단과 합치기 · <b>${ic('delete')}</b> 삭제`;
   show('edit');
   document.documentElement.style.setProperty('--hh', document.querySelector('header').offsetHeight + 'px');
   eHist = []; eIdx = -1;
@@ -1518,7 +1582,7 @@ function openPanel(k, example) {
   $('pMeaning').value = w?.meaning || '';
   $('pMeaning').dataset.example = example;
   $('pTrans').classList.add('hidden');
-  $('pSave').textContent = statusOf(k) === 0 ? '💾 저장' : '💾 다시 저장';
+  $('pSave').innerHTML = ic('save') + (statusOf(k) === 0 ? ' 저장' : ' 다시 저장');
   markStatusButtons(statusOf(k));
   $('pSeek').classList.toggle('hidden', !isTimed());
   $('extL').classList.toggle('hidden', !selRange.length);
@@ -1617,7 +1681,7 @@ function saveSelected() {
   touchWord(k);
   saveWords();
   $('pSave').textContent = '✅ 저장됨';
-  setTimeout(() => $('pSave').textContent = '💾 저장', 1500);
+  setTimeout(() => $('pSave').innerHTML = ic('save') + ' 저장', 1500);
 }
 $('pSave').onclick = saveSelected;
 // 📌 문장 통째로 저장: 지금 문장 전체를 하나의 카드로
@@ -1660,7 +1724,7 @@ async function loadDefinitions(k) {
 
 // ✓ 다 읽었어요: 파란 단어 → 아는 단어, 레슨은 서재의 "✓ 다 읽음"으로 / 다 읽은 레슨에서는 다시 "읽는 중"으로
 function updateFinishBtn() {
-  $('finishPage').innerHTML = current?.done ? '↩<span class="lbl"> 다시 읽는 중으로</span>' : '✓<span class="lbl"> 다 읽었어요</span>';
+  $('finishPage').innerHTML = current?.done ? '↩<span class="lbl"> 다시 읽는 중으로</span>' : ic('check') + '<span class="lbl"> 다 읽었어요</span>';
   $('finishPage').classList.toggle('primary', !current?.done);
 }
 $('finishPage').onclick = () => {
@@ -1690,7 +1754,7 @@ function renderSentExtra() {
     const w = words[k];
     return `<div class="lq" data-k="${esc(k)}"><span class="lv">${w.status}</span>
       <div style="flex:1;min-width:0"><b>${esc(k)}</b><div class="muted">${esc(w.meaning || '(뜻 없음)')}</div></div>
-      <button data-say="${esc(k)}">🔊</button></div>`;
+      <button data-say="${esc(k)}" aria-label="듣기">${ic('listen')}</button></div>`;
   }).join('') : '<div class="muted">이 문장에 저장한 단어가 없어요. 단어를 누르거나 여러 단어를 드래그해 저장하세요.</div>';
   $('sTrans').textContent = settings.trans ? '번역 숨기기' : '번역 보기';
   const box = $('sTransText'), text = sentences[playIdx];
@@ -1746,23 +1810,23 @@ function speak(text, onend, rate) {
 }
 function updatePlayer() {
   const v = isVideo();
-  $('pPlay').textContent = playing ? '⏸ 정지' : v ? '▶ 재생' : '▶ 듣기';
+  $('pPlay').innerHTML = playing ? ic('pause') + ' 정지' : ic('play') + (v ? ' 재생' : ' 듣기');
   const time = isTimed() && segs[playIdx] ? ` · ${fmtTime(segs[playIdx].t)}` : '';
   const nf = !!current?.netflix;
   $('nfOpen').classList.toggle('hidden', !nf);
   $('pPlay').classList.toggle('hidden', nf); // 넷플릭스는 앱 안에서 재생할 수 없음
   $('sentPos').textContent = sentences.length ? `${playIdx + 1} / ${sentences.length}${time}` : '';
   // 켜진 기능은 파란 테두리(on)로 표시
-  $('viewToggle').textContent = settings.focus ? '🎯 문장' : '📄 전체';
+  $('viewToggle').innerHTML = settings.focus ? ic('sentence') + ' 문장' : ic('page') + ' 전체';
   $('viewToggle').title = settings.focus ? '문장 보기 중 — 누르면 전체 보기' : '전체 보기 중 — 누르면 문장 보기';
   $('viewToggle').classList.toggle('hidden', !settings.cc);
-  $('ccToggle').textContent = settings.cc ? '💬 자막 ON' : '💬 자막 OFF';
+  $('ccToggle').innerHTML = ic('subtitles') + (settings.cc ? ' 자막 ON' : ' 자막 OFF');
   $('ccToggle').classList.toggle('on', settings.cc);
   $('loopBtn').classList.toggle('on', loop);
-  $('replayBtn').textContent = settings.replay ? '🔄 다시보기 ON' : '🔄 다시보기 OFF';
+  $('replayBtn').innerHTML = ic('review') + (settings.replay ? ' 다시보기 ON' : ' 다시보기 OFF');
   $('replayBtn').classList.toggle('on', !!settings.replay);
   for (const id of ['back5', 'fwd5', 'videoToggle']) $(id).classList.toggle('hidden', !v);
-  $('videoToggle').textContent = settings.video ? '📺 영상 ON' : '📺 영상 OFF';
+  $('videoToggle').innerHTML = ic('video') + (settings.video ? ' 영상 ON' : ' 영상 OFF');
   $('videoToggle').classList.toggle('on', settings.video);
   const wide = innerWidth >= (isTouchLayout() ? 1000 : 1100); // 넓은 화면은 영상이 왼쪽에 늘 보임
   $('ytWrap').classList.toggle('hidden', !v || !(settings.video || wide));
@@ -1779,8 +1843,8 @@ function updatePlayer() {
   }
   renderSentExtra();
   updateProgress();
-  $('bPlay').textContent = playing ? '⏸' : '▶';
-  $('bView').textContent = settings.focus ? '📄 페이지' : '🎯 문장';
+  $('bPlay').innerHTML = ic(playing ? 'pause' : 'play');
+  $('bView').innerHTML = settings.focus ? ic('page') + ' 페이지' : ic('sentence') + ' 문장';
   $('bCount').textContent = new Set([...document.querySelectorAll('#text .sent')].flatMap(lingqsIn)).size; // 🃏 복습이 먼저 보여줄 단어·구문 수
   layoutPages();
 }
@@ -1947,10 +2011,10 @@ function renderVocab() {
     .filter(([k, w]) => (vTab === 'phrases' ? isPhrase(k) : vTab === 'due' ? due.has(k) : vTab === 'mem' ? w.mem : true) && (vTab === 'mem' || test(w.status))
       && (!q || plain(k).includes(q) || (w.meaning || '').toLowerCase().includes(q)))
     .sort((a, b) => vTab === 'mem' ? b[1].mem - a[1].mem : b[1].added - a[1].added).slice(0, 300);
-  const btns = (k, s) => [[-1, '🚫'], [1, '1'], [2, '2'], [3, '3'], [4, '4'], [5, '✓']]
+  const btns = (k, s) => [[-1, ic('ignore')], [1, '1'], [2, '2'], [3, '3'], [4, '4'], [5, ic('check')]]
     .map(([v, t]) => `<button data-s="${v}" class="${v === s ? 'on' : ''}">${t}</button>`).join('');
   $('vList').innerHTML = rows.map(([k, w]) => `<div class="vrow" data-k="${esc(k)}">
-      <div><b>${esc(k)}</b> <button class="ldel" data-say="${esc(k)}">🔊</button><div class="ex">${esc(w.example || '')}</div></div>
+      <div><b>${esc(k)}</b> <button class="ldel" data-say="${esc(k)}" aria-label="듣기">${ic('listen')}</button><div class="ex">${esc(w.example || '')}</div></div>
       <div>${esc(w.meaning || '')}</div>
       <div class="row status">${btns(k, w.status)}</div></div>`).join('')
     || '<div class="muted">단어가 없어요</div>';
@@ -2002,14 +2066,14 @@ function renderCard(revealed) {
   if (qi >= queue.length) {
     box.innerHTML = `<p style="font-size:22px">🎉 복습 완료!</p>
       <p>${sess.n}개 · 😀 알았어요 ${sess.ok} · 😵 몰랐어요 ${sess.miss}</p>
-      ${sess.mem.length ? `<p>🧠 이번에 암기 완료: <b>${sess.mem.map(esc).join(', ')}</b></p>` : ''}
+      ${sess.mem.length ? `<p>${ic('mastered')} 이번에 암기 완료: <b>${sess.mem.map(esc).join(', ')}</b></p>` : ''}
       <button class="primary" onclick="startReview()">처음으로</button>`;
     return;
   }
   const k = queue[qi], w = words[k], need = settings.memN || 3;
   const ex = esc(w.example || '').replace(new RegExp(`\\b(${esc(k).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})\\b`, 'i'), '<b>$1</b>');
-  box.innerHTML = `<div class="muted">${qi + 1} / ${queue.length} · 🧠 ${Math.min(w.ok || 0, need)}/${need}${w.again ? ' · 지난번 몰랐어요' : ''}</div>
-    <div class="word ${k.length > 30 ? 'long' : ''}">${esc(k)} <button id="cardSpeak">🔊</button></div>
+  box.innerHTML = `<div class="muted">${qi + 1} / ${queue.length} · ${ic('mastered')} ${Math.min(w.ok || 0, need)}/${need}${w.again ? ' · 지난번 몰랐어요' : ''}</div>
+    <div class="word ${k.length > 30 ? 'long' : ''}">${esc(k)} <button id="cardSpeak" aria-label="듣기">${ic('listen')}</button></div>
     <div class="ex" style="margin-top:8px">${ex}</div>
     ${revealed ? `<div class="meaning">${esc(w.meaning || '(뜻 없음)')}</div>
       <div class="row" style="justify-content:center;margin-top:16px">
@@ -2143,7 +2207,7 @@ const bucketOf = k => { let h = 0; for (const c of k) h = (h * 31 + c.codePointA
 let cloud = null, pushTimer = null, lastPull = 0;
 let deleted = [];
 let pushed = { words: {}, lessons: {}, meta: null }; // 클라우드에 있는 내용(JSON) — 바뀐 것만 올리기 위해
-const setSync = t => { $('syncStatus').textContent = t; };
+const setSync = t => { $('syncStatus').innerHTML = t.replace('☁️', ic('sync')); }; // 문구는 앱 안에서만 만듦
 // 잠깐 떴다 사라지는 알림
 function toast(msg) {
   const el = Object.assign(document.createElement('div'), { textContent: msg });
@@ -2278,7 +2342,7 @@ async function initCloud() {
     cloud = null;
     pushed = { words: {}, lessons: {}, meta: null };
     if (!user) { btn.textContent = '로그인'; setSync(''); return; }
-    btn.textContent = '☁️'; btn.title = `${user.email} — 누르면 로그아웃`;
+    btn.innerHTML = ic('sync'); btn.title = `${user.email} — 누르면 로그아웃`;
     cloud = { fs, db, uid: user.uid, ready: false };
     pull();
   });
