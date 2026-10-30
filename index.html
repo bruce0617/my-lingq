@@ -79,8 +79,11 @@ main{max-width:1100px;margin:0 auto;padding:16px}
 .etext{flex:1;min-width:0;resize:none;overflow:hidden;line-height:1.5;padding:6px 8px}
 .eops{display:flex;gap:4px;flex:none}
 .eops button{padding:4px 7px}
-.prog{flex:1;height:8px;border-radius:4px;background:var(--line);cursor:pointer;overflow:hidden}
-.prog i{display:block;height:100%;width:0;background:var(--accent);transition:width .3s}
+.prog{flex:1;height:8px;border-radius:4px;background:var(--line);cursor:pointer;position:relative;touch-action:none}
+.prog::before{content:"";position:absolute;inset:-14px 0} /* 손가락으로 잡기 쉽게 위아래로 넓힌 터치 영역 */
+.prog i{display:block;height:100%;width:0;border-radius:4px;background:var(--accent);transition:width .3s;position:relative}
+.prog i::after{content:"";position:absolute;right:-8px;top:50%;width:16px;height:16px;margin-top:-8px;border-radius:50%;background:var(--accent);box-shadow:0 1px 4px rgba(0,0,0,.3)}
+.prog.drag i{transition:none}
 /* 리더: 재생 줄·영상은 메뉴 아래 고정, 스크립트만 스크롤 */
 .readtop{position:sticky;top:var(--hh,56px);z-index:4;background:var(--bg);padding-bottom:4px}
 .readtop .player{margin-bottom:8px}
@@ -1211,6 +1214,7 @@ function videoTick() {
 }
 // 진행 표시줄: 영상은 재생 시간, 텍스트는 문장 위치
 function updateProgress() {
+  if (progDrag) return; // 끄는 중에는 미리보기 유지
   let f = 0, label = '';
   const d = isVideo() ? ytPlayer?.getDuration?.() : 0;
   if (d) { const t = ytPlayer.getCurrentTime(); f = t / d; label = `${fmtTime(t)} / ${fmtTime(d)}`; }
@@ -1218,17 +1222,35 @@ function updateProgress() {
   $('progBar').style.width = (Math.min(1, f) * 100).toFixed(1) + '%';
   $('progTime').textContent = label;
 }
-// 진행 표시줄을 누르면 그 위치로 이동
-$('prog').onclick = e => {
-  const r = $('prog').getBoundingClientRect(), f = (e.clientX - r.left) / r.width;
+// 진행 표시줄: 누르거나 끌어서 이동 — 끄는 동안은 막대·시간만 미리 보여 주고, 손을 떼면 그 위치로
+let progDrag = false;
+const progFrac = e => { const r = $('prog').getBoundingClientRect(); return Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)); };
+function progPreview(f) {
+  $('progBar').style.width = (f * 100).toFixed(1) + '%';
+  const d = isVideo() ? ytPlayer?.getDuration?.() : 0;
+  $('progTime').textContent = d ? `${fmtTime(f * d)} / ${fmtTime(d)}` : sentences.length ? `${Math.min(sentences.length, Math.floor(f * sentences.length) + 1)} / ${sentences.length}` : '';
+}
+$('prog').addEventListener('pointerdown', e => {
+  progDrag = true; $('prog').classList.add('drag');
+  $('prog').setPointerCapture(e.pointerId);
+  progPreview(progFrac(e));
+});
+$('prog').addEventListener('pointermove', e => { if (progDrag) progPreview(progFrac(e)); });
+$('prog').addEventListener('pointerup', e => {
+  if (!progDrag) return;
+  progDrag = false; $('prog').classList.remove('drag');
+  progSeek(progFrac(e));
+});
+$('prog').addEventListener('pointercancel', () => { progDrag = false; $('prog').classList.remove('drag'); updateProgress(); });
+function progSeek(f) {
   if (isVideo()) {
     const d = ytPlayer?.getDuration?.();
     if (!d) return;
     let i = 0;
     while (i + 1 < segs.length && segs[i + 1].t <= f * d) i++;
     seekCue(i, playing);
-  } else gotoSent(Math.floor(f * sentences.length));
-};
+  } else gotoSent(Math.min(sentences.length - 1, Math.floor(f * sentences.length)));
+}
 // 영상 재생 위치에 맞는 자막 줄 강조 (🔁 반복 중이면 현재 줄로 되돌림)
 function syncCaption() {
   if (!isVideo() || !ytPlayer?.getCurrentTime) return;
