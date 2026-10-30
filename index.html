@@ -1,19 +1,19 @@
 <!doctype html>
-<html lang="ko">
+<html lang="ko" data-lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#eef3f9" id="themeColor">
+<meta name="theme-color" content="#fbf2e5" id="themeColor">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,400;7..72,500;7..72,700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,400;7..72,500;7..72,700&family=Nunito:wght@600;700;800&family=Shippori+Mincho:wght@600;700&display=swap">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="MyLingQ">
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="apple-touch-icon" sizes="180x180" href="./icons/icon-180.png">
 <title>My LingQ</title>
-<script>try { const t = localStorage.getItem('ml_theme'); if (t) document.documentElement.dataset.theme = t; } catch { /* 기기 설정 따름 */ }</script>
+<script>try { const t = localStorage.getItem('ml_theme'); if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t; const lang = localStorage.getItem('ml_lang') || JSON.parse(localStorage.getItem('ml_settings') || '{}').lang; document.documentElement.dataset.lang = lang === 'ja' ? 'ja' : 'en'; } catch { /* 기기 설정 따름 */ }</script>
 <style>
 :root{
   --bg:#f6f5f2;--card:#fff;--text:#1f2328;--muted:#6b7280;--line:#e5e3de;--accent:#2f6fde;
@@ -302,14 +302,18 @@ main>section:not(.hidden):not(#v-reader){animation:viewIn .32s cubic-bezier(.2,.
   #panel{max-height:34vh;transition:max-height .28s cubic-bezier(.2,.8,.2,1)}
   #panel.full{max-height:78vh}
 }
-/* ---------- 디자인: 노르딕 미스트 (Codex 시안 01) — 펄 화이트·아이스 블루·네이비, 안개 낀 바탕, 둥근 반투명 카드 ---------- */
-:root{--bg:#eef3f9;--bg-top:#e3ecf7;--card:#fff;--surface:rgba(255,255,255,.8);--text:#13233f;--muted:#6b7a90;--line:#d6dfeb;--edge:rgba(19,35,63,.07);--accent:#2f7cf6;--accent-soft:rgba(47,124,246,.12);
-  --fill:rgba(47,90,150,.08);--glass:rgba(255,255,255,.86);--glass-edge:rgba(255,255,255,.9);--glass-pill:rgba(47,124,246,.1);--bar:rgba(246,249,253,.94);
-  --new:#dcebff;--l1:#ffe08a;--l2:#ffe9a8;--l3:#fff1c6;--l4:#fff8e3;--play:#e4f0fc;
-  --lift:0 1px 2px rgba(19,35,63,.05),0 6px 18px rgba(19,35,63,.06);--glass-shadow:0 12px 32px rgba(19,35,63,.14),0 1px 3px rgba(19,35,63,.08);
-  --mesh:radial-gradient(70vmax 50vmax at 10% -10%,rgba(150,190,240,.55),transparent 62%),radial-gradient(60vmax 45vmax at 100% 12%,rgba(196,210,242,.5),transparent 62%),radial-gradient(70vmax 50vmax at 50% 112%,rgba(176,206,232,.5),transparent 62%)}
-@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#0b1322;--bg-top:#13213a;--card:#121d33;--surface:rgba(18,30,54,.74);--text:#e9f0fa;--muted:#8d9cb5;--line:#24344f;--edge:rgba(160,190,240,.12);--accent:#5d9fff;--accent-soft:rgba(93,159,255,.18);--fill:rgba(140,170,220,.14);--glass:rgba(20,32,58,.86);--glass-edge:rgba(160,190,240,.16);--glass-pill:rgba(140,180,255,.16);--bar:rgba(14,24,42,.94);--new:#1b3a66;--play:#16304a;--mesh:radial-gradient(70vmax 50vmax at 10% -10%,rgba(60,110,200,.42),transparent 62%),radial-gradient(60vmax 45vmax at 100% 15%,rgba(80,100,180,.28),transparent 62%),radial-gradient(70vmax 50vmax at 50% 112%,rgba(40,90,150,.30),transparent 62%);color-scheme:dark}}
-:root[data-theme=dark]{--bg:#0b1322;--bg-top:#13213a;--card:#121d33;--surface:rgba(18,30,54,.74);--text:#e9f0fa;--muted:#8d9cb5;--line:#24344f;--edge:rgba(160,190,240,.12);--accent:#5d9fff;--accent-soft:rgba(93,159,255,.18);--fill:rgba(140,170,220,.14);--glass:rgba(20,32,58,.86);--glass-edge:rgba(160,190,240,.16);--glass-pill:rgba(140,180,255,.16);--bar:rgba(14,24,42,.94);--new:#1b3a66;--play:#16304a;--mesh:radial-gradient(70vmax 50vmax at 10% -10%,rgba(60,110,200,.42),transparent 62%),radial-gradient(60vmax 45vmax at 100% 15%,rgba(80,100,180,.28),transparent 62%),radial-gradient(70vmax 50vmax at 50% 112%,rgba(40,90,150,.30),transparent 62%);color-scheme:dark}
+/* ---------- 언어별 디자인: 지중해 해돋이(en) · 교토 잉크(ja) ---------- */
+:root[data-lang=en]{--bg:#fbf2e5;--bg-top:#fff7ed;--card:#fffaf2;--surface:rgba(255,250,242,.86);--text:#123f50;--muted:#637176;--line:#dfd1bd;--edge:rgba(137,105,69,.22);--accent:#c44732;--accent-soft:rgba(216,83,57,.12);--fill:rgba(26,112,127,.09);--glass:rgba(255,248,237,.91);--glass-edge:rgba(255,255,255,.75);--glass-pill:rgba(216,83,57,.11);--bar:rgba(251,242,229,.96);--new:#bfe4f4;--l1:#f7cf70;--l2:#f8dc94;--l3:#f9e7b6;--l4:#faf0d4;--play:#dceeed;--ok:#267b75;--phl:#9a690b;--thumb:#176d7c;--lift:0 1px 2px rgba(16,38,44,.05),0 6px 18px rgba(16,38,44,.06);--glass-shadow:0 12px 32px rgba(16,38,44,.18);--mesh:radial-gradient(70vmax 50vmax at 8% -10%,rgba(216,146,75,.16),transparent 65%),radial-gradient(60vmax 50vmax at 100% 100%,rgba(216,146,75,.10),transparent 65%);color-scheme:light;--heading:"Nunito","Avenir Next","Apple SD Gothic Neo",sans-serif}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light])[data-lang=en]{--bg:#10262c;--bg-top:#17343b;--card:#19333a;--surface:rgba(25,51,58,.86);--text:#f6efdf;--muted:#b3c3c2;--line:#3b5356;--edge:rgba(192,216,209,.18);--accent:#ce5643;--accent-soft:rgba(240,130,101,.15);--fill:rgba(153,207,205,.11);--glass:rgba(22,46,53,.94);--glass-edge:rgba(201,225,215,.18);--glass-pill:rgba(240,130,101,.16);--bar:rgba(16,38,44,.96);--new:#244f68;--l1:#68521f;--l2:#554722;--l3:#453e25;--l4:#363529;--play:#24494b;--ok:#86bcb0;--phl:#e9bd61;--thumb:#295b66;--lift:0 1px 2px rgba(16,38,44,.05),0 6px 18px rgba(16,38,44,.06);--glass-shadow:0 12px 32px rgba(16,38,44,.18);--mesh:radial-gradient(70vmax 50vmax at 8% -10%,rgba(55,130,137,.16),transparent 65%),radial-gradient(60vmax 50vmax at 100% 100%,rgba(55,130,137,.10),transparent 65%);color-scheme:dark}}
+:root[data-theme=dark][data-lang=en]{--bg:#10262c;--bg-top:#17343b;--card:#19333a;--surface:rgba(25,51,58,.86);--text:#f6efdf;--muted:#b3c3c2;--line:#3b5356;--edge:rgba(192,216,209,.18);--accent:#ce5643;--accent-soft:rgba(240,130,101,.15);--fill:rgba(153,207,205,.11);--glass:rgba(22,46,53,.94);--glass-edge:rgba(201,225,215,.18);--glass-pill:rgba(240,130,101,.16);--bar:rgba(16,38,44,.96);--new:#244f68;--l1:#68521f;--l2:#554722;--l3:#453e25;--l4:#363529;--play:#24494b;--ok:#86bcb0;--phl:#e9bd61;--thumb:#295b66;--lift:0 1px 2px rgba(16,38,44,.05),0 6px 18px rgba(16,38,44,.06);--glass-shadow:0 12px 32px rgba(16,38,44,.18);--mesh:radial-gradient(70vmax 50vmax at 8% -10%,rgba(55,130,137,.16),transparent 65%),radial-gradient(60vmax 50vmax at 100% 100%,rgba(55,130,137,.10),transparent 65%);color-scheme:dark}
+:root[data-lang=ja]{--bg:#f5eedf;--bg-top:#faf4e8;--card:#fcf7ed;--surface:rgba(252,247,237,.86);--text:#182d40;--muted:#626660;--line:#d6c8ae;--edge:rgba(122,103,72,.26);--accent:#b7352b;--accent-soft:rgba(183,53,43,.10);--fill:rgba(35,57,74,.07);--glass:rgba(248,241,227,.92);--glass-edge:rgba(255,250,239,.8);--glass-pill:rgba(183,53,43,.09);--bar:rgba(245,238,223,.96);--new:#c2d9ea;--l1:#edc77f;--l2:#f0d69f;--l3:#f3e2bc;--l4:#f6ecd6;--play:#dfe8e6;--ok:#427768;--phl:#966517;--thumb:#243d50;--lift:0 1px 2px rgba(24,45,64,.05),0 6px 18px rgba(24,45,64,.06);--glass-shadow:0 12px 32px rgba(24,45,64,.18);--mesh:radial-gradient(70vmax 50vmax at 8% -10%,rgba(176,143,85,.16),transparent 65%),radial-gradient(60vmax 50vmax at 100% 100%,rgba(176,143,85,.10),transparent 65%);color-scheme:light;--heading:"Shippori Mincho","Yu Mincho","Hiragino Mincho ProN","AppleMyungjo",serif}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light])[data-lang=ja]{--bg:#151f29;--bg-top:#202d37;--card:#202e38;--surface:rgba(32,46,56,.86);--text:#f2e9d8;--muted:#b9b4a8;--line:#43505a;--edge:rgba(217,201,167,.18);--accent:#c95043;--accent-soft:rgba(225,112,91,.15);--fill:rgba(218,202,171,.09);--glass:rgba(28,40,50,.94);--glass-edge:rgba(228,211,180,.18);--glass-pill:rgba(225,112,91,.14);--bar:rgba(21,31,41,.96);--new:#294b65;--l1:#655020;--l2:#534422;--l3:#423b25;--l4:#333228;--play:#2a4147;--ok:#98b7a0;--phl:#dfb65e;--thumb:#2c4658;--lift:0 1px 2px rgba(24,45,64,.05),0 6px 18px rgba(24,45,64,.06);--glass-shadow:0 12px 32px rgba(24,45,64,.18);--mesh:radial-gradient(70vmax 50vmax at 8% -10%,rgba(81,104,117,.16),transparent 65%),radial-gradient(60vmax 50vmax at 100% 100%,rgba(81,104,117,.10),transparent 65%);color-scheme:dark}}
+:root[data-theme=dark][data-lang=ja]{--bg:#151f29;--bg-top:#202d37;--card:#202e38;--surface:rgba(32,46,56,.86);--text:#f2e9d8;--muted:#b9b4a8;--line:#43505a;--edge:rgba(217,201,167,.18);--accent:#c95043;--accent-soft:rgba(225,112,91,.15);--fill:rgba(218,202,171,.09);--glass:rgba(28,40,50,.94);--glass-edge:rgba(228,211,180,.18);--glass-pill:rgba(225,112,91,.14);--bar:rgba(21,31,41,.96);--new:#294b65;--l1:#655020;--l2:#534422;--l3:#423b25;--l4:#333228;--play:#2a4147;--ok:#98b7a0;--phl:#dfb65e;--thumb:#2c4658;--lift:0 1px 2px rgba(24,45,64,.05),0 6px 18px rgba(24,45,64,.06);--glass-shadow:0 12px 32px rgba(24,45,64,.18);--mesh:radial-gradient(70vmax 50vmax at 8% -10%,rgba(81,104,117,.16),transparent 65%),radial-gradient(60vmax 50vmax at 100% 100%,rgba(81,104,117,.10),transparent 65%);color-scheme:dark}
+h1,h2,.lbody b,#readerTitle{font-family:var(--heading)}
+.badge{background:var(--accent)}
+.lv{color:var(--text)}
+#g-accent stop:first-child{stop-color:var(--thumb)}
+#g-accent stop:last-child{stop-color:var(--accent)}
 h1,h2,b{color:var(--text)}
 header h1{letter-spacing:-.035em}
 /* 본문: 시안처럼 깔끔한 산세리프, 단어는 둥근 알약 하이라이트 */
@@ -338,7 +342,7 @@ button{border-radius:12px}
 .lchips span.lrn{color:var(--text);background:var(--l2)}
 .kbar{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums}
 .kbar i{flex:1;height:6px;border-radius:3px;background:var(--fill);overflow:hidden}
-.kbar i b{display:block;height:100%;border-radius:3px;background:linear-gradient(90deg,#6fb4ff,var(--accent))}
+.kbar i b{display:block;height:100%;border-radius:3px;background:linear-gradient(90deg,var(--thumb),var(--accent))}
 .lfoot{justify-content:flex-end}
 @media (max-width:800px){.grid{grid-template-columns:1fr}}
 .sx{flex-wrap:nowrap;align-items:flex-start}
@@ -348,9 +352,9 @@ button{border-radius:12px}
 .hidden-desk{display:none}
 /* 아이폰·아이패드 위 버튼, 아래 탭 */
 @media (max-width:800px), (pointer:coarse) and (max-width:1400px){
-  #nav button.active{color:var(--accent);background:rgba(255,255,255,.95);box-shadow:0 4px 14px rgba(19,60,140,.14),inset 0 1px 0 #fff}
-  #nav button.active .ti svg{filter:drop-shadow(0 4px 8px rgba(47,124,246,.35))}
-  #nav button{color:#5d6b82}
+  #nav button.active{color:var(--accent);background:var(--card);box-shadow:var(--lift)}
+  #nav button.active .ti svg{filter:drop-shadow(0 4px 8px var(--accent-soft))}
+  #nav button{color:var(--muted)}
   #nav{background:color-mix(in srgb,var(--glass) 80%,var(--card))}
   #authBtn,#themeBtn,#langBtn{border-radius:20px}
   /* 아이패드 가로(넓은 터치 화면) + 유튜브 레슨: 왼쪽 영상·재생 막대 고정, 오른쪽 스크립트 (LingQ 아이패드처럼) */
@@ -748,7 +752,7 @@ const paintThemeBtn = () => {
   $('themeBtn').textContent = isDark() ? '☀️' : '🌙';
   // 아이폰은 theme-color 값만 바꾸면 무시할 때가 있어서 태그를 새로 끼워 넣음
   const m = $('themeColor'), n = m.cloneNode();
-  n.content = isDark() ? '#0b1322' : '#eef3f9';
+  n.content = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
   m.replaceWith(n);
 };
 matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', paintThemeBtn);
@@ -766,7 +770,18 @@ $('themeBtn').onclick = () => {
 paintThemeBtn();
 
 // 공부할 언어 바꾸기: 서재·단어장·복습·통계가 그 언어 것만 보임
-function paintLang() { $('langSel').innerHTML = Object.entries(LANGS).map(([k, t]) => `<option value="${k}" ${k === curLang() ? 'selected' : ''}>${t}</option>`).join(''); $('langFlag').textContent = LANGS[curLang()].split(' ')[0]; }
+function paintLang() {
+  const root = document.documentElement, lang = curLang();
+  // 첫 렌더용 언어 사본. 실제 설정은 IndexedDB를 기준으로 함.
+  try { localStorage.setItem('ml_lang', lang); } catch { /* 이번만 적용 */ }
+  if (root.dataset.lang !== lang) {
+    root.classList.add('theme-swap');
+    root.dataset.lang = lang;
+    void root.offsetHeight;
+    setTimeout(() => { root.classList.remove('theme-swap'); void root.offsetHeight; }, 60);
+  }
+  paintThemeBtn();
+  $('langSel').innerHTML = Object.entries(LANGS).map(([k, t]) => `<option value="${k}" ${k === curLang() ? 'selected' : ''}>${t}</option>`).join(''); $('langFlag').textContent = LANGS[curLang()].split(' ')[0]; }
 $('langSel').onchange = () => {
   settings.lang = $('langSel').value; saveSettings(); paintLang();
   loadVoices(); renderStat(); show('library');
