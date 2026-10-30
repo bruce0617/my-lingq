@@ -254,6 +254,9 @@ main>section:not(.hidden):not(#v-reader){animation:viewIn .32s cubic-bezier(.2,.
   .tabs button{flex:none}
   .tabs>b{display:none}
   #v-library .tabs{width:calc(100% + 32px);margin:0 -16px!important;padding:0 16px 2px}
+  /* 아이폰: 'OO 레슨' 제목과 필터(전체/진행 중/영상…)는 화면 위에 고정, 레슨 목록만 스크롤 */
+  #v-library>.row:first-child{position:sticky;top:0;z-index:5;margin:0 -16px 12px!important;padding:max(8px,env(safe-area-inset-top)) 16px 10px;
+    background:var(--bg);box-shadow:0 6px 12px -10px rgba(0,0,0,.25)}
   body.reading{background:var(--card)}
   /* 아이폰 리더: LingQ처럼 스크립트가 화면을 채우고, 영상·재생 막대는 ▶를 누를 때만 아래에 뜸 */
   body.reading header{display:none}
