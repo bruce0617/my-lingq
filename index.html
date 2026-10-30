@@ -259,6 +259,7 @@ main>section:not(.hidden):not(#v-reader){animation:viewIn .32s cubic-bezier(.2,.
   #v-library>.row:first-child{position:sticky;top:0;z-index:5;margin:0 -16px 12px!important;padding:max(8px,env(safe-area-inset-top)) 16px 10px;
     background:var(--bg);box-shadow:0 6px 12px -10px rgba(0,0,0,.25)}
   body.reading{background:var(--card)}
+  html:has(body.reading){background:var(--card)} /* 글이 짧아도 아래쪽 바탕색이 같게 */
   /* 아이폰 리더: LingQ처럼 스크립트가 화면을 채우고, 영상·재생 막대는 ▶를 누를 때만 아래에 뜸 */
   body.reading header{display:none}
   body.reading main{padding:0 0 calc(96px + env(safe-area-inset-bottom))}
@@ -385,10 +386,10 @@ button{border-radius:12px}
 /* 언어별 배경 장식: 배치와 터치 영역은 그대로 두고 불투명 바탕 위에 그림만 겹침. */
 html[data-lang=en]{--theme-banner:url('./img/theme/en-banner.webp');--theme-paper:url('./img/theme/en-sand.webp')}
 html[data-lang=ja]{--theme-banner:url('./img/theme/ja-banner.webp');--theme-paper:url('./img/theme/ja-washi.webp')}
-html:is([data-lang=en],[data-lang=ja]){--art-veil:28%;--paper-veil:72%;--stamp-opacity:.18}
-html:is([data-lang=en],[data-lang=ja])[data-theme=dark]{--art-veil:83%;--paper-veil:96%;--stamp-opacity:.24}
+html:is([data-lang=en],[data-lang=ja]){--art-veil:28%;--paper-veil:72%;--stamp-opacity:.18;--reader-art:.3}
+html:is([data-lang=en],[data-lang=ja])[data-theme=dark]{--art-veil:83%;--paper-veil:96%;--stamp-opacity:.24;--reader-art:.12}
 @media(prefers-color-scheme:dark){
-  html:is([data-lang=en],[data-lang=ja]):not([data-theme=light]){--art-veil:83%;--paper-veil:96%;--stamp-opacity:.24}
+  html:is([data-lang=en],[data-lang=ja]):not([data-theme=light]){--art-veil:83%;--paper-veil:96%;--stamp-opacity:.24;--reader-art:.12}
 }
 html:is([data-lang=en],[data-lang=ja]) body::before{
   background-image:linear-gradient(color-mix(in srgb,var(--bg) var(--paper-veil),transparent),color-mix(in srgb,var(--bg) var(--paper-veil),transparent)),var(--theme-paper),var(--mesh);
@@ -400,6 +401,11 @@ html:is([data-lang=en],[data-lang=ja]) #v-library>.row:first-child{
   background-position:right center;background-size:auto,auto 100%;background-repeat:no-repeat;
 }
 html:is([data-lang=en],[data-lang=ja]) #v-library>.row:first-child h2{text-shadow:0 1px 3px var(--bg)}
+/* 리더: 위쪽에 테마 그림을 옅게 깔고 아래로 갈수록 사라지게(mask) — 바탕색 경계 없이, 글 읽기를 방해하지 않게 */
+html:is([data-lang=en],[data-lang=ja]) #v-reader{position:relative;isolation:isolate}
+html:is([data-lang=en],[data-lang=ja]) #v-reader::before{content:"";position:absolute;left:0;right:0;top:0;height:260px;z-index:-1;pointer-events:none;
+  background:var(--theme-banner) top right/auto 100% no-repeat;opacity:var(--reader-art,.45); /* 그림 높이 = 띠 높이 → 아래 끝이 mask로만 사라짐 */
+  -webkit-mask-image:linear-gradient(#000 35%,transparent);mask-image:linear-gradient(#000 35%,transparent)}
 /* 맥: 제목 줄을 그림이 보일 만한 높이의 띠로 */
 @media (min-width:801px) and (not ((pointer:coarse) and (max-width:1400px))){
   html:is([data-lang=en],[data-lang=ja]) #v-library>.row:first-child{min-height:132px;padding:18px 22px;border-radius:22px;align-items:flex-end}
@@ -425,7 +431,7 @@ html[data-lang=ja] #lessonList .lcard::after{border-radius:1px;background:repeat
 button .ic+span,button .ic{pointer-events:none}
 /* 색이 채워진 버튼(주요·켜짐·큰 재생) 안에서는 아이콘을 흰색으로 — 강조색 부분이 바탕에 묻히지 않게 */
 button.primary .ic,button.on .ic,#bPlay .ic,.tabs button.on .ic,.status button.on .ic{--accent:#fff;--thumb:#fff;--l1:rgba(255,255,255,.75);--text:#fff}
-:is(button.primary,button.on,.tabs button.on,.status button.on) .ic use[href="#i-check"]{--accent:rgba(255,255,255,.28)} /* 체크: 흰 원 위 흰 체크가 되지 않게 원만 옅게 */
+:is(button.primary,button.on,.tabs button.on,.status button.on,#bPlay) .ic :is(use[href="#i-check"],use[href="#i-play"]){--accent:rgba(255,255,255,.28)} /* 체크: 흰 원 위 흰 체크가 되지 않게 원만 옅게 */
 </style>
 </head>
 <body>
