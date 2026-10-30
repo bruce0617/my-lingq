@@ -247,7 +247,7 @@ main>section:not(.hidden):not(#v-reader){animation:viewIn .32s cubic-bezier(.2,.
   #nav button.active .ti svg{fill:url(#g-accent);transform:translateY(-1px) scale(1.06);filter:drop-shadow(0 4px 8px rgba(70,90,255,.35))}
   #nav{box-shadow:var(--glass-shadow),inset 0 1px 0 rgba(255,255,255,.95),inset 0 -1px 0 rgba(0,0,0,.04)}
   #nav .badge{position:absolute;top:4px;left:calc(50% + 12px)}
-  main{padding:8px 16px calc(120px + env(safe-area-inset-bottom))}
+  main{padding:8px 16px calc(140px + env(safe-area-inset-bottom))}
   #v-library h2{font-size:22px!important}
   .tabs{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin-left:0!important}
   .tabs::-webkit-scrollbar{display:none}
@@ -292,11 +292,15 @@ main>section:not(.hidden):not(#v-reader){animation:viewIn .32s cubic-bezier(.2,.
   .eops{margin-left:auto}
   .player button,.player select{padding:5px 8px;font-size:14px}
   #sentPos{width:100%}
-  body.panel-open main{padding-bottom:55vh} /* 단어 창 높이만큼 스크롤 여유 */
+  body.panel-open main{padding-bottom:38vh} /* 단어 창 높이만큼 스크롤 여유 */
   #panel{position:fixed;left:0;right:0;bottom:0;top:auto;margin:0;border-radius:16px 16px 0 0;max-height:50vh;overflow:auto;
     box-shadow:0 -4px 20px rgba(0,0,0,.15);z-index:10;padding-bottom:max(16px,env(safe-area-inset-bottom))}
   #panel:not(.hidden){animation:sheetUp .32s cubic-bezier(.2,.8,.2,1)}
-  #panel::before{content:"";display:block;width:36px;height:5px;border-radius:3px;background:var(--line);margin:-6px auto 10px}
+  #panel::before{display:none}
+  #pGrab{display:block;width:100%;height:22px;margin:-10px 0 4px;padding:0;background:none;border-radius:0;touch-action:none}
+  #pGrab::before{content:"";display:block;width:40px;height:5px;border-radius:3px;background:var(--line);margin:8px auto 0}
+  #panel{max-height:34vh;transition:max-height .28s cubic-bezier(.2,.8,.2,1)}
+  #panel.full{max-height:78vh}
 }
 /* ---------- 디자인: 노르딕 미스트 (Codex 시안 01) — 펄 화이트·아이스 블루·네이비, 안개 낀 바탕, 둥근 반투명 카드 ---------- */
 :root{--bg:#eef3f9;--bg-top:#e3ecf7;--card:#fff;--surface:rgba(255,255,255,.8);--text:#13233f;--muted:#6b7a90;--line:#d6dfeb;--edge:rgba(19,35,63,.07);--accent:#2f7cf6;--accent-soft:rgba(47,124,246,.12);
@@ -330,16 +334,24 @@ button{border-radius:12px}
 .lchips{display:flex;gap:6px;flex-wrap:wrap}
 .lchips span{font-size:12px;font-weight:600;color:var(--accent);background:var(--accent-soft);border-radius:8px;padding:1px 8px}
 .lchips span.plain{color:var(--muted);background:var(--fill)}
+.lchips span.new{color:var(--text);background:var(--new)}
+.lchips span.lrn{color:var(--text);background:var(--l2)}
 .kbar{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums}
 .kbar i{flex:1;height:6px;border-radius:3px;background:var(--fill);overflow:hidden}
 .kbar i b{display:block;height:100%;border-radius:3px;background:linear-gradient(90deg,#6fb4ff,var(--accent))}
 .lfoot{justify-content:flex-end}
 @media (max-width:800px){.grid{grid-template-columns:1fr}}
+.sx{flex-wrap:nowrap;align-items:flex-start}
+.sx>button{flex:none}
+.sxm{flex:1;justify-content:center;gap:6px}
+@media (pointer:coarse){#sentExtra button{min-height:44px}}
+.hidden-desk{display:none}
 /* 아이폰·아이패드 위 버튼, 아래 탭 */
 @media (max-width:800px), (pointer:coarse) and (max-width:1400px){
   #nav button.active{color:var(--accent);background:rgba(255,255,255,.95);box-shadow:0 4px 14px rgba(19,60,140,.14),inset 0 1px 0 #fff}
   #nav button.active .ti svg{filter:drop-shadow(0 4px 8px rgba(47,124,246,.35))}
   #nav button{color:#5d6b82}
+  #nav{background:color-mix(in srgb,var(--glass) 80%,var(--card))}
   #authBtn,#themeBtn,#langBtn{border-radius:20px}
   /* 아이패드 가로(넓은 터치 화면) + 유튜브 레슨: 왼쪽 영상·재생 막대 고정, 오른쪽 스크립트 (LingQ 아이패드처럼) */
   body.split main{max-width:none} /* 위치를 화면 폭(vw) 기준으로 잡으므로 본문 폭 제한(1100px)을 풂 — 12.9인치 가로에서 잘림 */
@@ -480,12 +492,10 @@ button{border-radius:12px}
         <div class="card" id="text"></div>
         <!-- 문장 보기 도구: 듣기·번역·이 문장의 저장 단어 -->
         <div class="card hidden" id="sentExtra">
-          <div class="row">
+          <div class="row sx">
             <button id="sPrev">‹ 이전</button>
-            <button id="sSpeak">🔊 문장</button>
-            <button id="sSlow">🐢 천천히</button>
-            <button id="sTrans"></button>
-            <button id="sNext" style="margin-left:auto">다음 ›</button>
+            <span class="row sxm"><button id="sSpeak">🔊 문장</button><button id="sSlow">🐢 천천히</button><button id="sTrans"></button></span>
+            <button id="sNext">다음 ›</button>
           </div>
           <div id="sTransText" class="hidden"></div>
           <div id="sList" style="margin-top:8px"></div>
@@ -493,12 +503,14 @@ button{border-radius:12px}
         <div class="muted" id="phraseHint">💡 단어를 누르면 뜻이 나와요. 여러 단어는 마우스로 드래그(아이폰: 살짝 길게 누른 채 손가락으로 끌기)하면 그 구간의 해석이 나와요.</div>
       </div>
       <div class="card hidden" id="panel">
+        <button id="pGrab" class="hidden-desk" aria-label="단어 창 크게/작게" title="누르거나 위로 밀면 크게"></button>
         <div class="row" style="justify-content:space-between;flex-wrap:nowrap">
           <span class="word" id="pWord"></span>
           <span style="white-space:nowrap"><button id="pSpeak">🔊</button> <button id="pClose">✕</button></span>
         </div>
         <div class="ex" id="pEx"></div>
         <div id="pTrans" class="hidden"></div>
+        <div class="chips row" id="pSuggest"></div>
         <div class="row" style="margin:6px 0">
           <button id="pSave" class="primary">💾 저장</button>
           <button id="pSaveSent">📌 문장 통째로 저장</button>
@@ -509,7 +521,6 @@ button{border-radius:12px}
           <button id="pSentSpeak">🔊 문장</button>
           <button id="pSeek" class="hidden">🎬 이 장면</button>
         </div>
-        <div class="chips row" id="pSuggest"></div>
         <label class="muted">내 뜻 (입력하면 자동 저장)</label>
         <textarea id="pMeaning" rows="2" placeholder="예: 끈질긴, 집요한"></textarea>
         <div class="row status" style="margin:10px 0">
@@ -528,7 +539,7 @@ button{border-radius:12px}
     <div id="bbar">
       <button id="bPlay" title="재생 (영상은 이때 나타남)">▶</button>
       <button id="bView"></button>
-      <button id="bReview" title="이 레슨의 저장 단어 · 누르면 복습">🃏 <span id="bCount"></span></button>
+      <button id="bReview" title="이 레슨에서 학습 중인 단어 먼저 복습">🃏 복습 <span id="bCount"></span></button>
     </div>
   </section>
 
@@ -727,7 +738,8 @@ function show(view) {
   if (view === 'stats') renderStats();
   window.scrollTo(0, 0);
 }
-document.querySelectorAll('[data-view]').forEach(b => b.onclick = () => show(b.dataset.view));
+let revFocus = null; // 리더의 🃏로 복습에 들어오면 그 레슨 단어 (탭으로 들어오면 없음)
+document.querySelectorAll('[data-view]').forEach(b => b.onclick = () => { revFocus = null; show(b.dataset.view); });
 
 // 다크 모드 켜기/끄기: 이 기기에만 기억 (처음엔 기기 설정을 따름)
 const isDark = () => document.documentElement.dataset.theme ? document.documentElement.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
@@ -804,10 +816,10 @@ function renderLibrary() {
     const thumb = l.video ? `style="background-image:url('https://i.ytimg.com/vi/${l.video}/mqdefault.jpg')"` : l.netflix ? 'style="background:#141414;color:#e50914"' : `style="background:${coverOf(l.title)}"`;
     return `<div class="lcard" data-open="${l.id}">
       <div class="thumb" ${thumb}>${l.video ? '' : l.netflix ? 'N' : esc((l.title.match(/[\p{L}\p{N}]/u) || ['📄'])[0].toUpperCase())}
-        ${l.done ? '<span class="donemark">✓ 다 읽음</span>' : ''}<div class="counts"><span><i class="dot" style="background:#8fb8ff"></i>${st.unknown}</span><span><i class="dot" style="background:#ffd966"></i>${st.lingqs}</span></div>${l.cues?.length ? `<span class="dur">${fmtLen(l.cues[l.cues.length - 1].t)}</span>` : ''}</div>
+        ${l.done ? '<span class="donemark">✓ 다 읽음</span>' : ''}${l.cues?.length ? `<span class="dur">${fmtLen(l.cues[l.cues.length - 1].t)}</span>` : ''}</div>
       <div class="lbody"><b>${esc(l.title)}</b>
-        <div class="lchips"><span>${l.video ? '▶ 영상' : l.netflix ? 'N 넷플릭스' : '📄 글'}</span><span class="plain">새 단어 ${pct}%</span></div>
-        <div class="kbar" title="이 레슨에서 아는 단어 비율"><i><b style="width:${100 - pct}%"></b></i>${100 - pct}%</div>
+        <div class="lchips"><span>${l.video ? '▶ 영상' : l.netflix ? 'N 넷플릭스' : '📄 글'}</span><span class="plain new">새 단어 ${st.unknown}</span>${st.lingqs ? `<span class="plain lrn">학습 중 ${st.lingqs}</span>` : ''}</div>
+        <div class="kbar" title="이 레슨에서 아는 단어 비율"><i><b style="width:${100 - pct}%"></b></i>아는 단어 ${100 - pct}%</div>
         <div class="lfoot"><button class="ldel" data-del="${l.id}" title="삭제">삭제</button></div></div></div>`;
   }).join('') + '</div>';
 }
@@ -1473,11 +1485,22 @@ function revealAbovePanel(el) {
 function closePanel() {
   selected = null;
   $('panel').classList.add('hidden');
+  $('panel').classList.remove('full');
   document.body.classList.remove('panel-open');
   selectEls([]);
   if (isPaged() && scrollY) window.scrollTo({ top: 0, behavior: 'smooth' }); // 단어 창 때문에 밀렸던 화면을 원래대로
 }
 $('pClose').onclick = closePanel;
+// 아이폰 단어 창 크기: 손잡이를 누르거나 위·아래로 밀어 크게/작게, 뜻을 입력하려 하면 크게
+$('pGrab').onclick = () => $('panel').classList.toggle('full');
+let grabY = null;
+$('pGrab').addEventListener('touchstart', e => { grabY = e.touches[0].clientY; }, { passive: true });
+$('pGrab').addEventListener('touchend', e => {
+  const dy = e.changedTouches[0].clientY - grabY;
+  if (Math.abs(dy) > 25) { e.preventDefault(); $('panel').classList.toggle('full', dy < 0); }
+  grabY = null;
+});
+$('pMeaning').addEventListener('focus', () => $('panel').classList.add('full'));
 $('pSpeak').onclick = () => selected && speak(selected);
 $('pSentSpeak').onclick = () => {
   if (isVideo() && playing) ytPlayer.pauseVideo();
@@ -1590,9 +1613,9 @@ $('finishPage').onclick = () => {
     delete current.done; saveLessons(); updateFinishBtn();
     return toast('↩ 서재의 읽는 중 목록으로 돌려놨어요');
   }
+  if (!confirm('이 레슨을 "✓ 다 읽음"으로 옮길까요?')) return;
   const ks = new Set([...document.querySelectorAll('#text .w.sn')].map(el => el.dataset.k));
-  if (!confirm(ks.size ? `파란 단어 ${ks.size}개를 '아는 단어'로 표시하고, 이 레슨을 "✓ 다 읽음"으로 옮길까요?` : '이 레슨을 "✓ 다 읽음"으로 옮길까요?')) return;
-  ks.forEach(k => setStatus(k, 5));
+  if (ks.size && confirm(`남은 파란 단어 ${ks.size}개도 '아는 단어'로 표시할까요?\n(취소하면 파란 단어는 그대로 두고 다 읽음만 표시해요)`)) ks.forEach(k => setStatus(k, 5));
   current.done = Date.now(); saveLessons();
   show('library');
   toast('✓ 다 읽음으로 옮겼어요 (서재의 "✓ 다 읽음"에서 다시 볼 수 있어요)');
@@ -1702,8 +1725,7 @@ function updatePlayer() {
   updateProgress();
   $('bPlay').textContent = playing ? '⏸' : '▶';
   $('bView').textContent = settings.focus ? '📄 페이지' : '🎯 문장';
-  const ks = new Set([...document.querySelectorAll('#text .w')].map(el => el.dataset.k));
-  $('bCount').textContent = [...ks].filter(k => isLearning(statusOf(k))).length;
+  $('bCount').textContent = new Set([...document.querySelectorAll('#text .sent')].flatMap(lingqsIn)).size; // 🃏 복습이 먼저 보여줄 단어·구문 수
   layoutPages();
 }
 // 메뉴·재생 줄 높이를 CSS 변수로 (고정 영역 아래로 스크롤 위치 맞춤)
@@ -1833,7 +1855,8 @@ $('pbClose').onclick = () => {
   updatePlayer();
 };
 $('bView').onclick = () => $('viewToggle').click();
-$('bReview').onclick = () => show('review');
+// 이 레슨의 학습 중 단어·구문을 복습 맨 앞에
+$('bReview').onclick = () => { revFocus = new Set([...document.querySelectorAll('#text .sent')].flatMap(lingqsIn)); show('review'); };
 
 // ---------- 키보드 단축키 ----------
 document.addEventListener('keydown', e => {
@@ -1896,6 +1919,7 @@ function startReview() {
   $('flash').classList.add('hidden');
   const pool = myWords().filter(([, w]) => isLearning(w.status)).length;
   $('revPool').textContent = pool ? `학습 중인 단어·문장 ${pool.toLocaleString()}개 · 다시 볼 단어 ${dueWords().length}개` : '레슨에서 단어나 문장을 저장하면 복습할 수 있어요.';
+  if (pool && revFocus?.size) $('revPool').textContent += ` · 📖 "${current?.title || '이 레슨'}" 단어 ${revFocus.size}개 먼저`;
   $('memSel').value = String(settings.memN || 3);
   const rows = Object.entries(log).filter(([, x]) => x.sessions || x.reviewed).sort((x, y) => y[0].localeCompare(x[0])).slice(0, 30);
   $('revHist').innerHTML = rows.map(([d, x]) => {
@@ -1908,8 +1932,10 @@ document.querySelectorAll('[data-rn]').forEach(b => b.onclick = () => {
   const n = +b.dataset.rn;
   const learning = myWords().filter(([, w]) => isLearning(w.status));
   if (!learning.length) return alert('복습할 단어가 없어요. 레슨에서 단어나 문장을 저장해 주세요.');
-  const again = shuffle(learning.filter(([, w]) => w.again)), rest = shuffle(learning.filter(([, w]) => !w.again));
-  queue = shuffle([...again, ...rest].slice(0, n).map(([k]) => k));
+  const mine = ([k]) => revFocus?.has(k);
+  const lesson = shuffle(learning.filter(mine)), others = learning.filter(e => !mine(e));
+  const again = shuffle(others.filter(([, w]) => w.again)), rest = shuffle(others.filter(([, w]) => !w.again));
+  queue = shuffle([...lesson, ...again, ...rest].slice(0, n).map(([k]) => k));
   qi = 0; sess = { n: queue.length, ok: 0, miss: 0, mem: [] };
   $('revSetup').classList.add('hidden');
   $('flash').classList.remove('hidden');
