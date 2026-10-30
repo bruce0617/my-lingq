@@ -1047,8 +1047,15 @@ function setPos(i) {
   current.pos = i;
   current.posAt = Date.now();
   clearTimeout(posTimer);
-  posTimer = setTimeout(saveLessons, 1500);
+  posTimer = setTimeout(() => { posTimer = null; saveLessons(); }, 1500);
 }
+// 앱을 닫거나 다른 앱으로 넘어갈 때: 모아 둔 저장·업로드를 바로 실행 (아이폰은 그 뒤 타이머가 안 돌 수 있음)
+function flushSaves() {
+  if (posTimer) { clearTimeout(posTimer); posTimer = null; saveLessons(); }
+  if (pushTimer) { clearTimeout(pushTimer); push(); }
+}
+document.addEventListener('visibilitychange', () => { if (document.hidden) flushSaves(); });
+addEventListener('pagehide', flushSaves);
 // 자막 줄로 영상 이동. 멈춰 있던 영상은 계속 멈춰 있게 (유튜브는 seek하면 자동 재생됨)
 function seekCue(i, play = false) {
   playIdx = Math.max(0, Math.min(sentences.length - 1, i));
@@ -1923,7 +1930,9 @@ $('importFile').onchange = async e => {
   try {
     const data = JSON.parse(await e.target.files[0].text());
     if (!confirm('현재 데이터를 백업 파일로 덮어쓸까요?')) return;
-    lessons = data.lessons || []; words = data.words || {}; log = data.log || {};
+    const gone = new Set(deleted); // 삭제 기록에 있는 id는 동기화 때 다시 지워지므로 새 id로
+    lessons = (data.lessons || []).map((l, i) => gone.has(l.id) ? { ...l, id: Date.now().toString(36) + i } : l);
+    words = data.words || {}; log = data.log || {};
     saveLessons(); saveWords(); store.save('ml_log', log); renderLibrary();
   } catch { alert('백업 파일을 읽지 못했어요.'); }
   e.target.value = '';
@@ -2007,37 +2016,31 @@ async function push() {
   pushTimer = null;
   if (!cloud?.ready) return;
   const { fs, db, uid } = cloud, jobs = [];
+  // 항목마다 성공했을 때만 pushed에 기록 → 실패한 것은 다음 저장 때 다시 올라감
+  const job = (p, done) => jobs.push(p.then(done));
   bucketsJson().forEach((j, b) => {
-    if (pushed.words[b] === j) return;
-    pushed.words[b] = j;
-    jobs.push(fs.setDoc(fs.doc(db, 'users', uid, 'words', 'b' + b), { data: j }));
+    if (pushed.words[b] !== j) job(fs.setDoc(fs.doc(db, 'users', uid, 'words', 'b' + b), { data: j }), () => { pushed.words[b] = j; });
   });
   for (const l of lessons) {
     const j = JSON.stringify(l);
-    if (pushed.lessons[l.id] === j) continue;
-    pushed.lessons[l.id] = j;
-    jobs.push(fs.setDoc(fs.doc(db, 'users', uid, 'lessons', l.id), { data: j }));
+    if (pushed.lessons[l.id] !== j) job(fs.setDoc(fs.doc(db, 'users', uid, 'lessons', l.id), { data: j }), () => { pushed.lessons[l.id] = j; });
   }
-  for (const id of Object.keys(pushed.lessons)) if (!lessons.some(l => l.id === id)) {
-    delete pushed.lessons[id];
-    jobs.push(fs.deleteDoc(fs.doc(db, 'users', uid, 'lessons', id)));
-  }
+  for (const id of Object.keys(pushed.lessons)) if (!lessons.some(l => l.id === id))
+    job(fs.deleteDoc(fs.doc(db, 'users', uid, 'lessons', id)), () => { delete pushed.lessons[id]; });
   const meta = JSON.stringify({ log, deleted });
-  if (pushed.meta !== meta) { pushed.meta = meta; jobs.push(fs.setDoc(fs.doc(db, 'users', uid, 'meta', 'main'), { data: meta })); }
+  if (pushed.meta !== meta) job(fs.setDoc(fs.doc(db, 'users', uid, 'meta', 'main'), { data: meta }), () => { pushed.meta = meta; });
   if (!jobs.length) return;
   setSync('☁️ 저장 중…');
-  try { await Promise.all(jobs); setSync('☁️ 동기화됨'); }
-  catch (e) {
-    console.error(e);
-    setSync('⚠️ 클라우드 저장 실패');
-    pushed = { words: {}, lessons: { ...pushed.lessons }, meta: null }; // 다음 저장 때 다시 시도
-  }
+  const failed = (await Promise.allSettled(jobs)).filter(r => r.status === 'rejected');
+  if (!failed.length) return setSync('☁️ 동기화됨');
+  console.error(failed[0].reason);
+  setSync('⚠️ 클라우드 저장 실패 — 다음 저장 때 다시 시도');
 }
 async function pull() {
   if (!cloud) return;
   const { fs, db, uid } = cloud;
   setSync('☁️ 불러오는 중…');
-  let movedTo = 0;
+  let movedTo = 0, reopen = false;
   try {
     const [ws, ls, meta] = await Promise.all([
       fs.getDocs(fs.collection(db, 'users', uid, 'words')),
@@ -2064,7 +2067,15 @@ async function pull() {
       const i = lessons.findIndex(x => x.id === l.id);
       if (i < 0) { lessons.push(l); return; }
       const loc = lessons[i];
-      if (l.id !== current?.id && (l.u || 0) > (loc.u || 0)) { lessons[i] = l; return; } // 지금 읽는 레슨 내용은 그대로
+      if ((l.u || 0) > (loc.u || 0)) {
+        if (l.id !== current?.id) { lessons[i] = l; return; }
+        // 지금 열린 레슨: 같은 객체에 덮어써서 current가 그대로 가리키게. 보던 위치는 더 최근 쪽
+        const keep = (loc.posAt || 0) > (l.posAt || 0) ? { pos: loc.pos, posAt: loc.posAt } : null;
+        for (const k of Object.keys(loc)) if (!(k in l)) delete loc[k];
+        Object.assign(loc, l, keep);
+        reopen = true;
+        return;
+      }
       // 보던 위치는 따로: 더 최근에 본 기기의 위치를 따름 (지금 열려 있는 레슨도)
       if ((l.posAt || 0) > (loc.posAt || 0)) {
         loc.pos = l.pos; loc.posAt = l.posAt;
@@ -2083,6 +2094,7 @@ async function pull() {
     if (!$('v-library').classList.contains('hidden')) renderLibrary();
     if (!$('v-vocab').classList.contains('hidden')) renderVocab();
     setSync('☁️ 동기화됨');
+    if (reopen && !playing && current && !$('v-reader').classList.contains('hidden')) { openLesson(current.id); toast('↻ 다른 기기에서 고친 내용으로 바꿨어요'); }
     if (movedTo) toast(`↪ 다른 기기에서 보던 ${movedTo}번째 문장으로 이동했어요`);
     push(); // 이 기기에만 있던 변경을 올림
   } catch (e) {
