@@ -1,0 +1,10 @@
+{
+  "hosting": {
+    "site": "my-lingq",
+    "public": ".deploy",
+    "headers": [
+      { "source": "**/*.@(html|js|webmanifest)", "headers": [{ "key": "Cache-Control", "value": "no-cache" }] },
+      { "source": "/", "headers": [{ "key": "Cache-Control", "value": "no-cache" }] }
+    ]
+  }
+}

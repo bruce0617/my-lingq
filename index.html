@@ -1095,7 +1095,7 @@ const TRANSCRIPT_API ='https://script.google.com/macros/s/AKfycbyKB2nWg9Xw50mOZZ
 async function fetchTranscriptApi(id) {
   const urls = [];
   const q = `?v=${id}&lang=${curLang()}`;
-  if (!location.hostname.endsWith('github.io')) urls.push(`/api/transcript${q}`);
+  if (!/(github\.io|web\.app)$/.test(location.hostname)) urls.push(`/api/transcript${q}`); // 집 Mac에서 직접 열었을 때
   else urls.push(MAC_RELAY + q);
   if (TRANSCRIPT_API) urls.push(TRANSCRIPT_API + q);
   let firstErr = null; // 집 Mac(주 경로) 오류를 보여줌 — 구글 서버의 '봇 확인' 오류는 원인을 가림
@@ -2351,6 +2351,12 @@ async function initCloud() {
     if (!document.hidden && cloud?.ready && Date.now() - lastPull > 5000) pull();
   });
 }
+// 예전 주소(github.io)는 유튜브 광고가 붙어서 새 주소로 옮김 — 로그인해 동기화한 뒤 새 주소에서 로그인하면 기록이 그대로
+if (location.hostname.endsWith('github.io')) addEventListener('load', () => {
+  const bar = Object.assign(document.createElement('a'), { href: 'https://my-lingq.web.app/', textContent: '📢 새 주소로 옮겼어요 (광고 없음): my-lingq.web.app — 로그인해 동기화한 뒤 여기를 눌러 주세요' });
+  Object.assign(bar.style, { position: 'fixed', top: 'env(safe-area-inset-top)', left: '0', right: '0', zIndex: 60, padding: '10px 16px', background: '#c44732', color: '#fff', fontSize: '14px', textAlign: 'center', textDecoration: 'none' });
+  document.body.appendChild(bar);
+});
 openStore().then(() => {
   lessons = store.load('ml_lessons', []);
   words = store.load('ml_words', {});

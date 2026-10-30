@@ -63,7 +63,7 @@ http.createServer(async (req, res) => {
 // ---------- 밖에서 쓰는 자막 중계 (Tailscale Funnel로 이 포트만 인터넷에 공개) ----------
 // /api/transcript 하나만 처리 — 앱 파일·개인 데이터(data/)는 여기서 절대 제공하지 않음
 const RELAY_PORT = +(process.env.RELAY_PORT || 8787);
-const ALLOWED_ORIGINS = ['https://bruce0617.github.io', 'http://localhost:8000'];
+const ALLOWED_ORIGINS = ['https://my-lingq.web.app', 'https://bruce0617.github.io', 'http://localhost:8000'];
 const LIMIT_PER_HOUR = 60; // 남용 방지: 집 인터넷이 유튜브에 막히지 않도록
 let hits = [];
 http.createServer(async (req, res) => {

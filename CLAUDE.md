@@ -7,7 +7,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 유료 LingQ를 대신하는 개인용 영어 읽기·단어 학습 PWA. 주 사용 기기는 **아이폰·아이패드**(사파리, 홈 화면 앱). UI 문구와 코드 주석은 한국어.
 
 - 앱 전체가 `index.html` 한 파일(HTML + CSS + 바닐라 JS). 빌드 도구·프레임워크·패키지 없음 — 추가하지 말 것.
-- 배포: `main`에 push하면 GitHub Pages(https://bruce0617.github.io/my-lingq/)에 반영. 사용자는 변경마다 커밋 + push까지 기대함. 커밋 메시지는 한국어.
+- 배포: **실제 앱 주소는 https://my-lingq.web.app** (Firebase Hosting, 프로젝트 travel-planner-2d036의 사이트 `my-lingq`). 변경 후 `./deploy.sh`로 올림(앱 파일만 `.deploy/`로 복사해 배포 — data/ 등은 포함 안 됨). 코드는 `main`에 커밋 + push도 함(사용자 기대). 커밋 메시지는 한국어.
+  - 예전 주소 GitHub Pages(bruce0617.github.io/my-lingq)는 **유튜브 삽입 영상에 광고가 붙어서**(아이패드·맥 사파리, 2026-10-31 확인: 같은 페이지를 localhost·ts.net·web.app에 두면 광고 없음) 옮겼음. github.io로 열면 새 주소 안내 띠가 뜸.
+  - Firebase CLI: `~/.local/fb/node_modules/.bin/firebase` (사용자 로그인 필요).
 - `data/`(LingQ에서 내보낸 개인 학습 데이터)와 `netflix-extension/`은 `.gitignore` 대상 — 공개 저장소에 올리지 않음.
 - `CODEX_TASKS.md`는 Codex용 옛 지시서(PWA 작업은 이미 끝남, 저장소 설명도 옛것). 참고만.
 

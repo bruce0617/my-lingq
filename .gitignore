@@ -5,3 +5,7 @@ netflix-extension/
 *.backup
 my-lingq-backup-*.json
 .DS_Store
+
+# Firebase 배포용 임시 폴더
+.deploy/
+.firebase/
