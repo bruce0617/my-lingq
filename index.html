@@ -342,6 +342,7 @@ button{border-radius:12px}
   #nav button{color:#5d6b82}
   #authBtn,#themeBtn,#langBtn{border-radius:20px}
   /* 아이패드 가로(넓은 터치 화면) + 유튜브 레슨: 왼쪽 영상·재생 막대 고정, 오른쪽 스크립트 (LingQ 아이패드처럼) */
+  body.split main{max-width:none} /* 위치를 화면 폭(vw) 기준으로 잡으므로 본문 폭 제한(1100px)을 풂 — 12.9인치 가로에서 잘림 */
   body.split #rTop,body.split .reader{margin-left:calc(50vw + 4px)!important}
   body.split .video{left:16px;right:auto;top:max(16px,env(safe-area-inset-top))!important;bottom:auto;width:calc(50vw - 28px);border-radius:18px}
   body.split .readtop .player{display:flex;left:16px;right:auto;width:calc(50vw - 28px);top:calc(max(16px,env(safe-area-inset-top)) + (50vw - 28px) * 9 / 16 + 12px);bottom:auto}
