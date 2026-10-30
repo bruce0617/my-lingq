@@ -54,7 +54,12 @@ python3 -m http.server 8765          # 정적 파일만 (자막 API 없음)
 - **단어 구간 드래그 vs 페이지 밀기**: 길게(0.25초) 누르면 드래그 시작, 이때 `swipe = null`로 밀기를 취소. 밀기는 `#v-reader` 전체에서 받되 단어 창·재생 막대·아래 막대 위는 제외.
 - 영상·재생 막대는 ▶(`#bPlay`)를 누를 때만 `body.pbar`로 보임. 리더에서는 `body.reading`이 위 메뉴를 숨김.
 
-## 디자인 (iOS 26 Liquid Glass 스타일)
+## 디자인 (노르딕 미스트 — Codex 시안 01, 토큰은 `</style>` 바로 앞 블록이 최종값)
+
+- 기기별 배치: 아이폰은 한 화면 리더 + 아래 탭 / 아이패드 가로(터치, 폭 ≥ 1000) + 유튜브 레슨은 `body.split`(왼쪽 영상·재생 막대 고정, 오른쪽 페이지 넘김 스크립트) / 맥(폭 ≥ 1100) + 유튜브 레슨은 `body.desk-split`(왼쪽 영상, 가운데 스크립트, 오른쪽 단어 창). 판정은 `layoutPages()`.
+- 서재 카드는 가로형(왼쪽 사진, 오른쪽 제목·종류 칩·아는 단어 막대).
+
+### 그 아래 바탕 (예전 iOS 26 Liquid Glass 규칙, 여전히 적용)
 
 - 색은 전부 `:root` CSS 변수. 다크 값은 **두 블록에 똑같이** 있음: `@media (prefers-color-scheme:dark){:root:not([data-theme=light])}`와 `:root[data-theme=dark]`. 다크 전용 규칙을 추가하면 두 조건 모두에 넣어야 함.
 - 바탕은 `html`에, `body`는 투명해야 `body::before`(고정 색 번짐 `--mesh`)가 보임. 리더(`body.reading`)는 단색.

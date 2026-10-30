@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#f2f2f7" id="themeColor">
+<meta name="theme-color" content="#eef3f9" id="themeColor">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,400;7..72,500;7..72,700&display=swap">
@@ -298,11 +298,74 @@ main>section:not(.hidden):not(#v-reader){animation:viewIn .32s cubic-bezier(.2,.
   #panel:not(.hidden){animation:sheetUp .32s cubic-bezier(.2,.8,.2,1)}
   #panel::before{content:"";display:block;width:36px;height:5px;border-radius:3px;background:var(--line);margin:-6px auto 10px}
 }
+/* ---------- 디자인: 노르딕 미스트 (Codex 시안 01) — 펄 화이트·아이스 블루·네이비, 안개 낀 바탕, 둥근 반투명 카드 ---------- */
+:root{--bg:#eef3f9;--bg-top:#e3ecf7;--card:#fff;--surface:rgba(255,255,255,.8);--text:#13233f;--muted:#6b7a90;--line:#d6dfeb;--edge:rgba(19,35,63,.07);--accent:#2f7cf6;--accent-soft:rgba(47,124,246,.12);
+  --fill:rgba(47,90,150,.08);--glass:rgba(255,255,255,.86);--glass-edge:rgba(255,255,255,.9);--glass-pill:rgba(47,124,246,.1);--bar:rgba(246,249,253,.94);
+  --new:#dcebff;--l1:#ffe08a;--l2:#ffe9a8;--l3:#fff1c6;--l4:#fff8e3;--play:#e4f0fc;
+  --lift:0 1px 2px rgba(19,35,63,.05),0 6px 18px rgba(19,35,63,.06);--glass-shadow:0 12px 32px rgba(19,35,63,.14),0 1px 3px rgba(19,35,63,.08);
+  --mesh:radial-gradient(70vmax 50vmax at 10% -10%,rgba(150,190,240,.55),transparent 62%),radial-gradient(60vmax 45vmax at 100% 12%,rgba(196,210,242,.5),transparent 62%),radial-gradient(70vmax 50vmax at 50% 112%,rgba(176,206,232,.5),transparent 62%)}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#0b1322;--bg-top:#13213a;--card:#121d33;--surface:rgba(18,30,54,.74);--text:#e9f0fa;--muted:#8d9cb5;--line:#24344f;--edge:rgba(160,190,240,.12);--accent:#5d9fff;--accent-soft:rgba(93,159,255,.18);--fill:rgba(140,170,220,.14);--glass:rgba(20,32,58,.86);--glass-edge:rgba(160,190,240,.16);--glass-pill:rgba(140,180,255,.16);--bar:rgba(14,24,42,.94);--new:#1b3a66;--play:#16304a;--mesh:radial-gradient(70vmax 50vmax at 10% -10%,rgba(60,110,200,.42),transparent 62%),radial-gradient(60vmax 45vmax at 100% 15%,rgba(80,100,180,.28),transparent 62%),radial-gradient(70vmax 50vmax at 50% 112%,rgba(40,90,150,.30),transparent 62%);color-scheme:dark}}
+:root[data-theme=dark]{--bg:#0b1322;--bg-top:#13213a;--card:#121d33;--surface:rgba(18,30,54,.74);--text:#e9f0fa;--muted:#8d9cb5;--line:#24344f;--edge:rgba(160,190,240,.12);--accent:#5d9fff;--accent-soft:rgba(93,159,255,.18);--fill:rgba(140,170,220,.14);--glass:rgba(20,32,58,.86);--glass-edge:rgba(160,190,240,.16);--glass-pill:rgba(140,180,255,.16);--bar:rgba(14,24,42,.94);--new:#1b3a66;--play:#16304a;--mesh:radial-gradient(70vmax 50vmax at 10% -10%,rgba(60,110,200,.42),transparent 62%),radial-gradient(60vmax 45vmax at 100% 15%,rgba(80,100,180,.28),transparent 62%),radial-gradient(70vmax 50vmax at 50% 112%,rgba(40,90,150,.30),transparent 62%);color-scheme:dark}
+h1,h2,b{color:var(--text)}
+header h1{letter-spacing:-.035em}
+/* 본문: 시안처럼 깔끔한 산세리프, 단어는 둥근 알약 하이라이트 */
+#text,#panel .word,.flash .word,#panel .ex,.ex{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Apple SD Gothic Neo",sans-serif}
+#text{font-size:20px;line-height:2.05;letter-spacing:-.005em}
+.w{border-radius:8px;padding:2px 4px}
+#panel .word{font-weight:800;letter-spacing:-.02em}
+#panel{border-radius:22px}
+.card,.tile{border-radius:18px}
+button{border-radius:12px}
+.tabs button{border-radius:18px;padding:6px 15px}
+/* 서재: 왼쪽 사진 + 오른쪽 제목·종류·진행 막대인 가로 카드 */
+.grid{grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:14px}
+.lcard{flex-direction:row;border-radius:20px;padding:10px;gap:12px;align-items:stretch}
+.lcard .thumb{width:118px;flex:none;aspect-ratio:auto;min-height:104px;border-radius:14px;overflow:hidden;font-size:30px}
+.lcard .counts{left:6px;bottom:6px;gap:4px}
+.lcard .counts span{padding:0 6px;font-size:11.5px;line-height:18px}
+.lcard .dur{right:6px;top:6px;bottom:auto;font-size:11px;line-height:18px}
+.lcard .donemark{left:6px;top:6px;font-size:11px;line-height:18px}
+.lbody{padding:2px 2px 0;gap:6px;min-width:0}
+.lbody b{font-size:16px;font-weight:700;letter-spacing:-.01em}
+.lchips{display:flex;gap:6px;flex-wrap:wrap}
+.lchips span{font-size:12px;font-weight:600;color:var(--accent);background:var(--accent-soft);border-radius:8px;padding:1px 8px}
+.lchips span.plain{color:var(--muted);background:var(--fill)}
+.kbar{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.kbar i{flex:1;height:6px;border-radius:3px;background:var(--fill);overflow:hidden}
+.kbar i b{display:block;height:100%;border-radius:3px;background:linear-gradient(90deg,#6fb4ff,var(--accent))}
+.lfoot{justify-content:flex-end}
+@media (max-width:800px){.grid{grid-template-columns:1fr}}
+/* 아이폰·아이패드 위 버튼, 아래 탭 */
+@media (max-width:800px), (pointer:coarse) and (max-width:1400px){
+  #nav button.active{color:var(--accent);background:rgba(255,255,255,.95);box-shadow:0 4px 14px rgba(19,60,140,.14),inset 0 1px 0 #fff}
+  #nav button.active .ti svg{filter:drop-shadow(0 4px 8px rgba(47,124,246,.35))}
+  #nav button{color:#5d6b82}
+  #authBtn,#themeBtn,#langBtn{border-radius:20px}
+  /* 아이패드 가로(넓은 터치 화면) + 유튜브 레슨: 왼쪽 영상·재생 막대 고정, 오른쪽 스크립트 (LingQ 아이패드처럼) */
+  body.split #rTop,body.split .reader{margin-left:calc(50vw + 4px)!important}
+  body.split .video{left:16px;right:auto;top:max(16px,env(safe-area-inset-top))!important;bottom:auto;width:calc(50vw - 28px);border-radius:18px}
+  body.split .readtop .player{display:flex;left:16px;right:auto;width:calc(50vw - 28px);top:calc(max(16px,env(safe-area-inset-top)) + (50vw - 28px) * 9 / 16 + 12px);bottom:auto}
+  body.split #pbClose{display:none}
+  body.split #v-reader.paged #text{width:calc(50vw - 72px);column-width:calc(50vw - 72px)}
+  body.split #bbar{left:calc(50vw + 12px)}
+  body.split #panel{left:50vw}
+  body.split #pgPrev{left:50vw}
+}
+/* 맥(넓은 화면) + 유튜브 레슨: 왼쪽에 영상·재생 줄을 붙여 두고 오른쪽에 스크립트·단어 창 */
+@media (min-width:1100px) and (not ((pointer:coarse) and (max-width:1400px))){
+  body.desk-split main{max-width:1560px}
+  body.desk-split #v-reader{display:grid;grid-template-columns:minmax(380px,.8fr) minmax(0,1.4fr);gap:20px;align-items:start}
+  body.desk-split #rTop{grid-column:1 / -1}
+  body.desk-split .readtop{display:flex;flex-direction:column-reverse;gap:8px;top:calc(var(--hh,56px) + 8px)}
+  body.desk-split .video{max-height:none;width:100%;margin:0;border-radius:18px}
+  body.desk-split #panel{top:calc(var(--hh,56px) + 8px)}
+  body.desk-split #videoToggle{display:none} /* 넓은 화면은 영상이 늘 보임 */
+}
 </style>
 </head>
 <body>
 <header>
-  <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><linearGradient id="g-accent" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2f8bff"/><stop offset="1" stop-color="#6e5bff"/></linearGradient></defs></svg>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><linearGradient id="g-accent" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6fb4ff"/><stop offset="1" stop-color="#2f6fec"/></linearGradient></defs></svg>
   <h1>My LingQ</h1>
   <nav id="nav">
     <button data-view="new"><span class="ti" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20Zm1 5h-2v4H7v2h4v4h2v-4h4v-2h-4V7Z"/></svg></span>새 레슨</button>
@@ -672,7 +735,7 @@ const paintThemeBtn = () => {
   $('themeBtn').textContent = isDark() ? '☀️' : '🌙';
   // 아이폰은 theme-color 값만 바꾸면 무시할 때가 있어서 태그를 새로 끼워 넣음
   const m = $('themeColor'), n = m.cloneNode();
-  n.content = isDark() ? '#000000' : '#f2f2f7';
+  n.content = isDark() ? '#0b1322' : '#eef3f9';
   m.replaceWith(n);
 };
 matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', paintThemeBtn);
@@ -741,10 +804,10 @@ function renderLibrary() {
     return `<div class="lcard" data-open="${l.id}">
       <div class="thumb" ${thumb}>${l.video ? '' : l.netflix ? 'N' : esc((l.title.match(/[\p{L}\p{N}]/u) || ['📄'])[0].toUpperCase())}
         ${l.done ? '<span class="donemark">✓ 다 읽음</span>' : ''}<div class="counts"><span><i class="dot" style="background:#8fb8ff"></i>${st.unknown}</span><span><i class="dot" style="background:#ffd966"></i>${st.lingqs}</span></div>${l.cues?.length ? `<span class="dur">${fmtLen(l.cues[l.cues.length - 1].t)}</span>` : ''}</div>
-      <div class="newbar"><i style="width:${100 - pct}%"></i></div>
       <div class="lbody"><b>${esc(l.title)}</b>
-        <div class="lfoot"><span class="muted"><i class="dot" style="background:var(--new)"></i>새 단어 ${pct}%</span>
-        <button class="ldel" data-del="${l.id}" title="삭제">삭제</button></div></div></div>`;
+        <div class="lchips"><span>${l.video ? '▶ 영상' : l.netflix ? 'N 넷플릭스' : '📄 글'}</span><span class="plain">새 단어 ${pct}%</span></div>
+        <div class="kbar" title="이 레슨에서 아는 단어 비율"><i><b style="width:${100 - pct}%"></b></i>${100 - pct}%</div>
+        <div class="lfoot"><button class="ldel" data-del="${l.id}" title="삭제">삭제</button></div></div></div>`;
   }).join('') + '</div>';
 }
 $('lessonList').onclick = e => {
@@ -1621,7 +1684,8 @@ function updatePlayer() {
   for (const id of ['back5', 'fwd5', 'videoToggle']) $(id).classList.toggle('hidden', !v);
   $('videoToggle').textContent = settings.video ? '📺 영상 ON' : '📺 영상 OFF';
   $('videoToggle').classList.toggle('on', settings.video);
-  $('ytWrap').classList.toggle('hidden', !v || !settings.video);
+  const wide = innerWidth >= (isTouchLayout() ? 1000 : 1100); // 넓은 화면은 영상이 왼쪽에 늘 보임
+  $('ytWrap').classList.toggle('hidden', !v || !(settings.video || wide));
   $('ytWrap').style.top = document.querySelector('header').offsetHeight + 'px'; // 메뉴 바로 아래에 고정
   $('voiceSel').classList.toggle('hidden', v);
   $('text').classList.toggle('hidden', !settings.cc);
@@ -1726,6 +1790,10 @@ function showPage(p) {
 function layoutPages() {
   const v = $('v-reader'), reading = isTouchLayout() && !v.classList.contains('hidden');
   document.body.classList.toggle('reading', reading);
+  // 넓은 화면 + 유튜브 레슨이면 영상을 왼쪽에 늘 보이게 (아이패드 가로: split, 맥: desk-split)
+  const wideVideo = !v.classList.contains('hidden') && isVideo() && innerWidth >= 1000;
+  document.body.classList.toggle('split', wideVideo && reading);
+  document.body.classList.toggle('desk-split', wideVideo && !reading && innerWidth >= 1100);
   v.classList.toggle('paged', reading && isPaged());
   if (!v.classList.contains('paged')) { $('text').style.height = ''; $('pageInfo').textContent = ''; return; }
   const t = $('text');
