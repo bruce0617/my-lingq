@@ -97,6 +97,11 @@ main{max-width:1100px;margin:0 auto;padding:16px}
 #panel .word{font-size:24px;font-weight:700;word-break:break-word}
 .status button{min-width:40px;border-radius:20px}
 .chips button{border-radius:16px;font-size:14px;padding:3px 10px;margin:2px 0}
+#pSuggest{flex-direction:column;align-items:stretch;gap:2px}
+#pSuggest .pos{display:flex;flex-wrap:wrap;align-items:center;gap:4px}
+#pSuggest .pos i{font-style:normal;font-size:12px;font-weight:700;color:var(--muted);min-width:3.2em}
+#pMeaning{line-height:1.5;resize:vertical}
+.mean{white-space:pre-line;line-height:1.45}
 .defs{max-height:200px;overflow:auto;font-size:14px;padding-left:20px}
 .defs li{margin-bottom:4px}
 .links a{color:var(--accent);font-size:14px;margin-right:10px}
@@ -1609,6 +1614,7 @@ function openPanel(k, example) {
   $('pEx').textContent = w?.example || example;
   $('pMeaning').value = w?.meaning || '';
   $('pMeaning').dataset.example = example;
+  growMeaning();
   $('pTrans').classList.add('hidden');
   $('pSave').innerHTML = ic('save') + (statusOf(k) === 0 ? ' 저장' : ' 다시 저장');
   markStatusButtons(statusOf(k));
@@ -1666,25 +1672,63 @@ function setMeaning(text) {
   if (statusOf(k) === 0 && text.trim()) setStatus(k, 1); // 뜻을 적으면 학습 시작(1단계)
   else { saveWords(); renderSentExtra(); }
 }
-$('pMeaning').oninput = () => setMeaning($('pMeaning').value);
+$('pMeaning').oninput = () => { growMeaning(); setMeaning($('pMeaning').value); };
+// 뜻 칸은 내용만큼 늘어남
+function growMeaning() {
+  const t = $('pMeaning');
+  t.style.height = 'auto';
+  t.style.height = Math.min(t.scrollHeight + 2, 260) + 'px';
+}
+// 네이버 사전 등에서 복사한 글을 붙여 넣으면 군더더기를 빼고 "품사 뜻" 한 줄씩으로 정리
+const POS_RE = /^(명사|대명사|동사|자동사|타동사|형용사|부사|전치사|접속사|감탄사|조동사|한정사|관사|수사|접두사|접미사|약어|구동사|숙어|관용구|イディオム|명|동|형|부|전|접|감|대)$/;
+const JUNK_RE = /^(발음\s*듣기|반복\s*듣기|단어장(에)?\s*(저장)?|저장|더보기|펼치기|접기|예문(\s*열기)?|유의어|반의어|출처.*|.*사전\s*제공|.*(옥스퍼드|동아출판|YBM|교학사).*|\d+\s*\/\s*\d+)$|^(미국식|영국식)|^[\[\/].*[\]\/]$|[ˈˌəɪʊæɑɔʌθðŋʃʒ]/;
+function cleanPaste(raw, k) {
+  const head = plain(k || '').toLowerCase();
+  const lines = raw.replace(/\r/g, '').split('\n').map(l => l.replace(/[\t\u00a0 ]+/g, ' ').trim())
+    .filter(l => l && l.toLowerCase() !== head && !JUNK_RE.test(l));
+  const out = [];
+  for (const l of lines) {
+    const prev = out[out.length - 1];
+    // "1." 이나 "명사"만 있는 줄은 다음 줄과 합치기
+    if (prev && (/^\d+\.?$/.test(prev) || POS_RE.test(prev.replace(/^\d+\.?\s*/, '')))) out[out.length - 1] = `${prev} ${l}`;
+    else out.push(l);
+  }
+  return out.map(l => l.replace(/^(\d+)\.?\s+/, '$1. ')).join('\n');
+}
+$('pMeaning').addEventListener('paste', e => {
+  const raw = e.clipboardData?.getData('text/plain');
+  if (!raw || !raw.includes('\n')) return; // 한 줄짜리는 그대로
+  e.preventDefault();
+  const t = $('pMeaning'), cur = t.value.trim();
+  t.value = (cur ? cur + '\n' : '') + cleanPaste(raw, selected);
+  t.dispatchEvent(new Event('input'));
+});
 document.querySelectorAll('#panel .status button').forEach(b => b.onclick = () => {
   if (!selected) return;
   setStatus(selected, +b.dataset.s);
   if (!words[selected].example) { words[selected].example = $('pMeaning').dataset.example; saveWords(); }
 });
 
-// 한국어 뜻 추천 (MyMemory 무료 번역)
+// 한국어 뜻 추천: 구글 번역 사전(품사별 뜻, 무료·키 없음), 안 되면 MyMemory
+// shortcut: 구글의 비공식 무료 주소라 막히면 MyMemory로 떨어짐, 자주 막히면 Mac 중계(server.mjs)로 옮기기
 const sugCache = {}, mainTrans = {};
 async function translate(text) {
-  const r = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(plain(text).slice(0, 450))}&langpair=${curLang()}|ko`);
-  return r.json();
+  const q = encodeURIComponent(plain(text).slice(0, 450));
+  try {
+    const r = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=${curLang()}&tl=ko&hl=ko&dt=t&dt=bd&dj=1&q=${q}`);
+    const j = await r.json();
+    return { text: (j.sentences || []).map(x => x.trans || '').join(''), dict: (j.dict || []).map(d => ({ pos: d.pos, terms: d.terms.slice(0, 6) })) };
+  } catch {
+    const j = await (await fetch(`https://api.mymemory.translated.net/get?q=${q}&langpair=${curLang()}|ko`)).json();
+    return { text: j.responseData?.translatedText || '', dict: [] };
+  }
 }
-// 번역 결과: mainTrans[k] = 대표 해석, sugCache[k] = 추천 뜻 목록(Promise, 중복 요청 방지)
+// 번역 결과: mainTrans[k] = 저장할 기본 뜻(품사별 한 줄씩), sugCache[k] = 품사별 추천 뜻(Promise, 중복 요청 방지)
 function fetchSuggestions(k) {
-  return sugCache[k] ??= translate(k).then(j => {
-    mainTrans[k] = j.responseData?.translatedText || '';
-    const all = [j.responseData?.translatedText, ...(j.matches || []).map(m => m.translation)];
-    return [...new Set(all.filter(t => t && /[가-힣]/.test(t) && t.length <= 40).map(t => t.trim()))].slice(0, 4);
+  return sugCache[k] ??= translate(k).then(t => {
+    const dict = t.dict.slice(0, 4);
+    mainTrans[k] = dict.length ? dict.slice(0, 3).map(d => `${d.pos} ${d.terms.slice(0, 3).join(', ')}`).join('\n') : t.text;
+    return dict.length ? dict : (t.text ? [{ pos: '', terms: [t.text] }] : []);
   }).catch(() => { delete sugCache[k]; return []; });
 }
 async function loadSuggestions(k) {
@@ -1693,16 +1737,17 @@ async function loadSuggestions(k) {
   if (isPhrase(k)) { $('pTrans').textContent = '해석 중…'; $('pTrans').classList.remove('hidden'); }
   const list = await fetchSuggestions(k);
   if (selected !== k) return;
-  box.innerHTML = list.map(t => `<button>${esc(t)}</button>`).join('');
+  box.innerHTML = list.map(d => `<div class="pos">${d.pos ? `<i>${esc(d.pos)}</i>` : ''}${d.terms.map(t => `<button>${esc(t)}</button>`).join('')}</div>`).join('');
   // 드래그한 구간은 해석을 크게 바로 보여줌
   if (isPhrase(k)) $('pTrans').textContent = mainTrans[k] ? `해석: ${mainTrans[k]}` : '해석을 불러오지 못했어요';
+  growMeaning();
 }
 // 💾 저장: 뜻을 안 적었으면 해석을 뜻으로, 문장도 함께 저장
 function saveSelected() {
   const k = selected;
   if (!k) return;
   let m = $('pMeaning').value.trim();
-  if (!m) { m = mainTrans[k] || ''; $('pMeaning').value = m; }
+  if (!m) { m = mainTrans[k] || ''; $('pMeaning').value = m; growMeaning(); }
   setMeaning(m);
   if (!isLearning(statusOf(k))) setStatus(k, 1);
   words[k].example = $('pMeaning').dataset.example || words[k].example;
@@ -1727,6 +1772,7 @@ $('pSuggest').onclick = e => {
   if (!b) return;
   const cur = $('pMeaning').value.trim();
   $('pMeaning').value = cur ? `${cur}, ${b.textContent}` : b.textContent;
+  growMeaning();
   setMeaning($('pMeaning').value);
 };
 
@@ -1781,7 +1827,7 @@ function renderSentExtra() {
   $('sList').innerHTML = items.length ? items.map(k => {
     const w = words[k];
     return `<div class="lq" data-k="${esc(k)}"><span class="lv">${w.status}</span>
-      <div style="flex:1;min-width:0"><b>${esc(k)}</b><div class="muted">${esc(w.meaning || '(뜻 없음)')}</div></div>
+      <div style="flex:1;min-width:0"><b>${esc(k)}</b><div class="muted mean">${esc(w.meaning || '(뜻 없음)')}</div></div>
       <button data-say="${esc(k)}" aria-label="듣기">${ic('listen')}</button></div>`;
   }).join('') : '<div class="muted">이 문장에 저장한 단어가 없어요. 단어를 누르거나 여러 단어를 드래그해 저장하세요.</div>';
   $('sTrans').textContent = settings.trans ? '번역 숨기기' : '번역 보기';
@@ -1791,7 +1837,7 @@ function renderSentExtra() {
   if (transCache[text]) { box.textContent = transCache[text]; return; }
   box.textContent = '번역 중…';
   translate(text)
-    .then(j => { transCache[text] = j.responseData?.translatedText || '(번역 없음)'; })
+    .then(t => { transCache[text] = t.text || '(번역 없음)'; })
     .catch(() => { transCache[text] = '번역을 불러오지 못했어요'; })
     .then(() => { if (sentences[playIdx] === text) box.textContent = transCache[text]; });
 }
@@ -2043,7 +2089,7 @@ function renderVocab() {
     .map(([v, t]) => `<button data-s="${v}" class="${v === s ? 'on' : ''}">${t}</button>`).join('');
   $('vList').innerHTML = rows.map(([k, w]) => `<div class="vrow" data-k="${esc(k)}">
       <div><b>${esc(k)}</b> <button class="ldel" data-say="${esc(k)}" aria-label="듣기">${ic('listen')}</button><div class="ex">${esc(w.example || '')}</div></div>
-      <div>${esc(w.meaning || '')}</div>
+      <div class="mean">${esc(w.meaning || '')}</div>
       <div class="row status">${btns(k, w.status)}</div></div>`).join('')
     || '<div class="muted">단어가 없어요</div>';
 }
@@ -2103,7 +2149,7 @@ function renderCard(revealed) {
   box.innerHTML = `<div class="muted">${qi + 1} / ${queue.length} · ${ic('mastered')} ${Math.min(w.ok || 0, need)}/${need}${w.again ? ' · 지난번 몰랐어요' : ''}</div>
     <div class="word ${k.length > 30 ? 'long' : ''}">${esc(k)} <button id="cardSpeak" aria-label="듣기">${ic('listen')}</button></div>
     <div class="ex" style="margin-top:8px">${ex}</div>
-    ${revealed ? `<div class="meaning">${esc(w.meaning || '(뜻 없음)')}</div>
+    ${revealed ? `<div class="meaning mean">${esc(w.meaning || '(뜻 없음)')}</div>
       <div class="row" style="justify-content:center;margin-top:16px">
         <button onclick="grade(false)">😵 몰랐어요</button><button class="primary" onclick="grade(true)">😀 알았어요</button></div>`
     : `<div style="margin-top:16px"><button class="primary" onclick="renderCard(true)">뜻 보기</button></div>`}
