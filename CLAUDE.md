@@ -41,6 +41,7 @@ python3 -m http.server 8765          # 정적 파일만 (자막 API 없음)
 
 **유튜브 자막** (`fetchTranscriptApi`): github.io에서는 집 Mac 중계(`MAC_RELAY`, Tailscale Funnel) → Apps Script 순, 그 외 호스트에서는 같은 서버의 `/api/transcript` → Apps Script. Apps Script는 유튜브 봇 확인에 거의 막힘 — 실질 경로는 Mac.
 - `server.mjs`는 서버 두 개: 8000(앱 파일 + `/api/transcript`)과 8787(`/api/transcript`만, 127.0.0.1, CORS 허용 목록, 시간당 60회 제한). Funnel은 8787만 인터넷에 공개. launchd `com.mylingq.server`가 상시 실행, 로그는 `/tmp/mylingq-server.log`.
+- 8787의 `POST /api/ask`(본문 text/plain JSON `{token,q}`): 단어 창 "Claude에게 묻기"를 이 Mac의 `claude -p`(구독, `--tools ''`로 도구 없음)로 답함. 비밀번호는 `~/.mylingq-ask-token`(커밋 금지), 앱은 `localStorage ml_ask_token`에 저장. 실패하면 claude.ai 링크로 대체.
 - 자막은 유튜브 ANDROID 클라이언트로 `youtubei/v1/player` → captionTracks에서 영어(사람 자막 우선) 선택.
 - Funnel 켜기/끄기는 Mac을 인터넷에 여는 일이라 사용자가 직접 실행함.
 

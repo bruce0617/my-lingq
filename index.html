@@ -65,6 +65,7 @@ main{max-width:1100px;margin:0 auto;padding:16px}
 #text{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none} /* 기본 텍스트 선택 대신 직접 드래그 */
 .w{border-radius:4px;padding:1px 1px;cursor:pointer}
 .w.drag{background:var(--accent)!important;color:#fff}
+#pAnswer{font-size:15px;margin:8px 0;padding:10px 12px;border-radius:10px;background:var(--play)}
 #pTrans{font-size:17px;margin:8px 0;padding:8px 10px;border-radius:8px;background:var(--play)}
 .w.sn{background:var(--new)}
 .w.s1{background:var(--l1)}.w.s2{background:var(--l2)}.w.s3{background:var(--l3)}.w.s4{background:var(--l4)}
@@ -650,6 +651,7 @@ button.primary .ic,button.on .ic,#bPlay .ic,.tabs button.on .ic,.status button.o
           <button data-s="5" title="아는 단어" aria-label="아는 단어"><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg></button>
         </div>
         <div class="links" id="pLinks"></div>
+        <div id="pAnswer" class="mean hidden"></div>
         <ol class="defs" id="pDefs"></ol>
         <div class="muted">단축키: 1–4 레벨 · K 아는 단어 · X 무시 · Esc 닫기 · Space 재생 · ←/→ 문장 이동</div>
       </div>
@@ -1626,7 +1628,8 @@ function openPanel(k, example) {
     `<a href="https://${ja ? 'ja' : 'en'}.dict.naver.com/#/search?query=${q}" target="_blank">네이버 사전</a>` +
     `<a href="https://papago.naver.com/?sk=${curLang()}&tk=ko&st=${q}" target="_blank">파파고</a>` +
     `<a href="https://youglish.com/pronounce/${q}/${ja ? 'japanese' : 'english'}" target="_blank">YouGlish</a>` +
-    `<a href="${askClaudeUrl(k)}" target="_blank">Claude에게 묻기</a>`;
+    `<a href="${askClaudeUrl(k)}" target="_blank" id="pAsk">Claude에게 묻기</a>`;
+  $('pAnswer').classList.add('hidden');
   if (isPhrase(k)) $('pDefs').innerHTML = ''; else loadDefinitions(k);
   loadSuggestions(k);
   if (!playing) speak(k);
@@ -1639,6 +1642,33 @@ function askClaudeUrl(k) {
   const q = `${LANGS[curLang()].slice(5)} 공부 중이에요. 아래 문맥에서 표현 "${plain(k)}"의 뜻을 한국어로 쉽게 설명해 주세요. 자막이 자동 자막이면 잘못 받아 적은 말일 수도 있으니, 문맥상 이상하면 원래 말이 뭐였을지도 짚어 주세요.\n\n레슨: ${current?.title || ''}${at}\n문맥: ${ctx}`;
   return 'https://claude.ai/new?q=' + encodeURIComponent(q);
 }
+// 집 Mac의 Claude Code로 앱 안에서 답 받기 (구독 사용, 요금 없음) — 비밀번호가 없거나 Mac이 꺼져 있으면 claude.ai로
+const ASK_API = MAC_RELAY.replace('/api/transcript', '/api/ask');
+$('pLinks').addEventListener('click', async e => {
+  const a = e.target.closest('#pAsk');
+  if (!a) return;
+  let token = localStorage.getItem('ml_ask_token');
+  if (!token) {
+    token = (prompt('집 Mac의 "Claude에게 묻기" 비밀번호를 넣으면 앱 안에서 바로 답을 받아요.\n(비워 두면 claude.ai에서 열어요)') || '').trim();
+    if (!token) return; // 링크 그대로 열기
+    localStorage.setItem('ml_ask_token', token);
+  }
+  e.preventDefault();
+  const k = selected, box = $('pAnswer'), href = a.href;
+  box.classList.remove('hidden');
+  box.textContent = 'Claude에게 묻는 중… (10초쯤 걸려요)';
+  let msg;
+  try {
+    const r = await fetch(ASK_API, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ token, q: decodeURIComponent(href.split('q=')[1]) }) });
+    const j = await r.json();
+    if (r.status === 401) localStorage.removeItem('ml_ask_token');
+    if (j.answer) { if (selected === k) box.innerHTML = esc(j.answer).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>'); return; }
+    msg = j.error || '답을 받지 못했어요';
+  } catch { msg = '집 Mac에 연결하지 못했어요 (꺼져 있거나 잠자기 중일 수 있어요)'; }
+  if (selected !== k) return;
+  box.textContent = msg + ' ';
+  box.insertAdjacentHTML('beforeend', `<a href="${href}" target="_blank">claude.ai에서 묻기</a>`);
+});
 // 아이폰: 아래에서 올라오는 단어 창에 문장이 가리지 않게, 고정 영역 바로 아래로 스크롤
 function revealAbovePanel(el) {
   if (!isTouchLayout() || !el) return;
