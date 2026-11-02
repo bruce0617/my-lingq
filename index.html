@@ -1625,11 +1625,19 @@ function openPanel(k, example) {
   $('pLinks').innerHTML =
     `<a href="https://${ja ? 'ja' : 'en'}.dict.naver.com/#/search?query=${q}" target="_blank">네이버 사전</a>` +
     `<a href="https://papago.naver.com/?sk=${curLang()}&tk=ko&st=${q}" target="_blank">파파고</a>` +
-    `<a href="https://youglish.com/pronounce/${q}/${ja ? 'japanese' : 'english'}" target="_blank">YouGlish</a>`;
+    `<a href="https://youglish.com/pronounce/${q}/${ja ? 'japanese' : 'english'}" target="_blank">YouGlish</a>` +
+    `<a href="${askClaudeUrl(k)}" target="_blank">Claude에게 묻기</a>`;
   if (isPhrase(k)) $('pDefs').innerHTML = ''; else loadDefinitions(k);
   loadSuggestions(k);
   if (!playing) speak(k);
   revealAbovePanel(selRange[0] || document.querySelector(`#text .sent[data-i="${selSent}"]`));
+}
+// Claude에게 묻기: 앞뒤 문장까지 담은 질문을 claude.ai 새 대화에 미리 채워 열기 (자동 자막 오인식도 짚어 달라고)
+function askClaudeUrl(k) {
+  const ctx = sentences.slice(Math.max(0, selSent - 2), selSent + 3).join(' ').slice(0, 1200);
+  const at = isVideo() && segs[selSent] ? `\n영상: https://youtu.be/${current.video}?t=${Math.floor(segs[selSent].t)}` : '';
+  const q = `${LANGS[curLang()].slice(5)} 공부 중이에요. 아래 문맥에서 표현 "${plain(k)}"의 뜻을 한국어로 쉽게 설명해 주세요. 자막이 자동 자막이면 잘못 받아 적은 말일 수도 있으니, 문맥상 이상하면 원래 말이 뭐였을지도 짚어 주세요.\n\n레슨: ${current?.title || ''}${at}\n문맥: ${ctx}`;
+  return 'https://claude.ai/new?q=' + encodeURIComponent(q);
 }
 // 아이폰: 아래에서 올라오는 단어 창에 문장이 가리지 않게, 고정 영역 바로 아래로 스크롤
 function revealAbovePanel(el) {
