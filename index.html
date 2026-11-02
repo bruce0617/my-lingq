@@ -65,6 +65,7 @@ main{max-width:1100px;margin:0 auto;padding:16px}
 #text{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none} /* 기본 텍스트 선택 대신 직접 드래그 */
 .w{border-radius:4px;padding:1px 1px;cursor:pointer}
 .w.drag{background:var(--accent)!important;color:#fff}
+#pAnswer button{margin-top:8px}
 #pAnswer{font-size:15px;margin:8px 0;padding:10px 12px;border-radius:10px;background:var(--play)}
 #pTrans{font-size:17px;margin:8px 0;padding:8px 10px;border-radius:8px;background:var(--play)}
 .w.sn{background:var(--new)}
@@ -1662,12 +1663,26 @@ $('pLinks').addEventListener('click', async e => {
     const r = await fetch(ASK_API, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ token, q: decodeURIComponent(href.split('q=')[1]) }) });
     const j = await r.json();
     if (r.status === 401) localStorage.removeItem('ml_ask_token');
-    if (j.answer) { if (selected === k) box.innerHTML = esc(j.answer).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>'); return; }
+    if (j.answer) {
+      if (selected !== k) return;
+      box.innerHTML = esc(j.answer).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>') + '<div><button id="pUseAns" class="primary">이 답을 뜻으로 저장</button></div>';
+      box.dataset.answer = j.answer.replace(/\*\*(.+?)\*\*/g, '$1').replace(/^\s*[-*] /gm, '• ');
+      return;
+    }
     msg = j.error || '답을 받지 못했어요';
   } catch { msg = '집 Mac에 연결하지 못했어요 (꺼져 있거나 잠자기 중일 수 있어요)'; }
   if (selected !== k) return;
   box.textContent = msg + ' ';
   box.insertAdjacentHTML('beforeend', `<a href="${href}" target="_blank">claude.ai에서 묻기</a>`);
+});
+// Claude 답을 내 뜻으로 (이미 적은 뜻이 있으면 아래에 덧붙임)
+$('pAnswer').addEventListener('click', e => {
+  if (!e.target.closest('#pUseAns')) return;
+  const cur = $('pMeaning').value.trim(), ans = $('pAnswer').dataset.answer;
+  $('pMeaning').value = cur ? `${cur}\n${ans}` : ans;
+  growMeaning();
+  saveSelected();
+  e.target.closest('#pUseAns').textContent = '✅ 뜻으로 저장했어요';
 });
 // 아이폰: 아래에서 올라오는 단어 창에 문장이 가리지 않게, 고정 영역 바로 아래로 스크롤
 function revealAbovePanel(el) {
