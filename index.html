@@ -70,7 +70,12 @@ main{max-width:1100px;margin:0 auto;padding:16px}
 #pTrans{font-size:17px;margin:8px 0;padding:8px 10px;border-radius:8px;background:var(--play)}
 .w.sn{background:var(--new)}
 .w.s1{background:var(--l1)}.w.s2{background:var(--l2)}.w.s3{background:var(--l3)}.w.s4{background:var(--l4)}
-.w.ph{background:color-mix(in srgb,var(--accent) 22%,transparent);box-shadow:inset 0 -3px 0 var(--accent)} /* 저장한 구문·문장: 단어(노랑)와 다른 코랄 형광펜 + 밑줄 */
+/* 저장한 구문·문장: 단어(노랑)와 다른 코랄 형광펜 + 밑줄, 빈칸(.phg)까지 이어 한 덩어리 띠로 */
+.w.ph,.phg{background:color-mix(in srgb,var(--accent) 22%,transparent);box-shadow:inset 0 -3px 0 var(--accent)}
+#text .w.ph{border-radius:0}
+.phg{padding:2px 0}
+#text .w.ph.phs{border-top-left-radius:8px;border-bottom-left-radius:8px}
+#text .w.ph.phe{border-top-right-radius:8px;border-bottom-right-radius:8px}
 .w.sel{outline:2px solid var(--accent)}
 .player select{width:auto}
 /* 레슨 편집: 문장(문단)마다 한 칸, 영상은 1분 단위로 묶음 */
@@ -1519,12 +1524,24 @@ function phraseIndex() {
 // 본문에서 저장한 구문에 형광펜
 function markPhrases() {
   const by = phraseIndex();
-  document.querySelectorAll('#text .w.ph').forEach(el => el.classList.remove('ph'));
+  document.querySelectorAll('#text .w.ph').forEach(el => el.classList.remove('ph', 'phs', 'phe'));
+  document.querySelectorAll('#text .phg').forEach(g => g.replaceWith(g.textContent));
   document.querySelectorAll('#text .sent').forEach(sent => {
+    sent.normalize();
     const ws = [...sent.querySelectorAll('.w')], keys = ws.map(el => el.dataset.k);
     keys.forEach((k, i) => {
-      for (const parts of by[k] || []) if (parts.every((p, j) => keys[i + j] === p))
-        for (let j = 0; j < parts.length; j++) ws[i + j].classList.add('ph');
+      for (const parts of by[k] || []) if (parts.every((p, j) => keys[i + j] === p)) {
+        ws[i].classList.add('phs'); ws[i + parts.length - 1].classList.add('phe');
+        for (let j = 0; j < parts.length; j++) {
+          ws[i + j].classList.add('ph');
+          // 단어 사이 빈칸도 칠해서 구문이 한 덩어리 띠로 보이게
+          const gap = ws[i + j].previousSibling;
+          if (j && gap?.nodeType === 3 && gap.previousSibling === ws[i + j - 1]) {
+            const g = document.createElement('span');
+            g.className = 'phg'; gap.replaceWith(g); g.append(gap);
+          }
+        }
+      }
     });
   });
 }
