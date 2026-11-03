@@ -853,7 +853,7 @@ function setStatus(k, s) {
   if (isLearning(s) && prev === 5) { delete w.ok; delete w.mem; } // 다시 학습 중으로 돌리면 암기 횟수도 처음부터
   saveWords();
   document.querySelectorAll(`#text .w[data-k="${CSS.escape(k)}"]`).forEach(el => {
-    const keep = ['sel', 'ph'].filter(c => el.classList.contains(c));
+    const keep = ['sel', 'ph', 'ph2', 'phs', 'phe'].filter(c => el.classList.contains(c));
     el.className = ['w', cls(s), ...keep].filter(Boolean).join(' ');
   });
   if (isPhrase(k)) markPhrases();
@@ -2107,7 +2107,9 @@ function layoutPages() {
   if (!v.classList.contains('paged')) { $('text').style.height = ''; $('pageInfo').textContent = ''; return; }
   const t = $('text');
   t.style.height = Math.max(200, $('bbar').getBoundingClientRect().top - (t.getBoundingClientRect().top + scrollY) - 12) + 'px'; // 단어 창 때문에 스크롤돼 있어도 같은 높이
-  showPage(pageOf(playIdx));
+  // 문장이 두 페이지에 걸쳐 있으면 지금 보는 페이지 유지 (문장 시작 페이지로 되돌아가지 않게)
+  const a = pageOf(playIdx), b = pageOf(playIdx, true);
+  showPage(page >= a && page <= b ? page : a);
 }
 // 페이지를 넘기면 그 페이지 첫 문장이 지금 위치 (▶는 여기서 재생, 다음에 열면 여기부터)
 function turnPage(d) {
