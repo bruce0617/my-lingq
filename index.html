@@ -1595,8 +1595,21 @@ document.addEventListener('pointerup', () => {
   if (!drag) return;
   const range = drag.range;
   cancelDrag();
-  openWords(range);
+  if (range.length > 1) return openWords(range);
+  // 저장한 구문·문장 속 단어: 첫 터치는 구문 전체, 한 번 더 누르면 그 단어 하나 (누를 때마다 번갈아)
+  const w = range[0], ph = phraseAt(w);
+  openWords(ph && !(selRange.length > 1 && selRange.includes(w)) ? ph : [w]);
 });
+// 이 단어를 품은 저장 구문의 단어들 (여러 개면 가장 긴 것)
+function phraseAt(w) {
+  if (!w.classList.contains('ph')) return null;
+  const by = phraseIndex(), ws = [...w.closest('.sent').querySelectorAll('.w')], keys = ws.map(el => el.dataset.k), at = ws.indexOf(w);
+  let best = null;
+  keys.forEach((k, i) => {
+    for (const parts of by[k] || []) if (i <= at && at < i + parts.length && parts.length > (best?.length || 0) && parts.every((p, j) => keys[i + j] === p)) best = ws.slice(i, i + parts.length);
+  });
+  return best;
+}
 document.addEventListener('pointercancel', cancelDrag);
 // 드래그 중에는 화면이 스크롤되지 않게
 document.addEventListener('touchmove', e => { if (drag?.active) e.preventDefault(); }, { passive: false });
