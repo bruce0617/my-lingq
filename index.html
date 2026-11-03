@@ -74,6 +74,7 @@ main{max-width:1100px;margin:0 auto;padding:16px}
 .w.ph,.phg{background:color-mix(in srgb,var(--accent) 22%,transparent);box-shadow:inset 0 -3px 0 var(--accent)}
 #text .w.ph{border-radius:0}
 .phg{padding:2px 0}
+.w.ph.ph2,.phg.ph2{background:color-mix(in srgb,var(--accent) 45%,transparent);box-shadow:inset 0 -5px 0 var(--accent)}
 #text .w.ph.phs{border-top-left-radius:8px;border-bottom-left-radius:8px}
 #text .w.ph.phe{border-top-right-radius:8px;border-bottom-right-radius:8px}
 .w.sel{outline:2px solid var(--accent)}
@@ -1524,7 +1525,7 @@ function phraseIndex() {
 // 본문에서 저장한 구문에 형광펜
 function markPhrases() {
   const by = phraseIndex();
-  document.querySelectorAll('#text .w.ph').forEach(el => el.classList.remove('ph', 'phs', 'phe'));
+  document.querySelectorAll('#text .w.ph').forEach(el => el.classList.remove('ph', 'ph2', 'phs', 'phe'));
   document.querySelectorAll('#text .phg').forEach(g => g.replaceWith(g.textContent));
   document.querySelectorAll('#text .sent').forEach(sent => {
     sent.normalize();
@@ -1533,13 +1534,15 @@ function markPhrases() {
       for (const parts of by[k] || []) if (parts.every((p, j) => keys[i + j] === p)) {
         ws[i].classList.add('phs'); ws[i + parts.length - 1].classList.add('phe');
         for (let j = 0; j < parts.length; j++) {
-          ws[i + j].classList.add('ph');
+          // 구문 안의 구문(겹침)은 ph2로 더 진하게
+          ws[i + j].classList.add(ws[i + j].classList.contains('ph') ? 'ph2' : 'ph');
           // 단어 사이 빈칸도 칠해서 구문이 한 덩어리 띠로 보이게
-          const gap = ws[i + j].previousSibling;
-          if (j && gap?.nodeType === 3 && gap.previousSibling === ws[i + j - 1]) {
+          let gap = ws[i + j].previousSibling;
+          if (!j || gap?.previousSibling !== ws[i + j - 1]) continue;
+          if (gap.nodeType === 3) {
             const g = document.createElement('span');
             g.className = 'phg'; gap.replaceWith(g); g.append(gap);
-          }
+          } else if (gap.classList?.contains('phg')) gap.classList.add('ph2');
         }
       }
     });
@@ -1613,19 +1616,19 @@ document.addEventListener('pointerup', () => {
   const range = drag.range;
   cancelDrag();
   if (range.length > 1) return openWords(range);
-  // 저장한 구문·문장 속 단어: 첫 터치는 구문 전체, 한 번 더 누르면 그 단어 하나 (누를 때마다 번갈아)
-  const w = range[0], ph = phraseAt(w);
-  openWords(ph && !(selRange.length > 1 && selRange.includes(w)) ? ph : [w]);
+  // 저장한 구문·문장 속 단어: 누를 때마다 큰 덩어리 → 안쪽 덩어리 → 단어 하나 → 다시 큰 덩어리
+  const w = range[0], opts = [...phrasesAt(w), [w]];
+  const cur = opts.findIndex(o => o.length === selRange.length && o[0] === selRange[0]);
+  openWords(opts[(cur + 1) % opts.length]);
 });
-// 이 단어를 품은 저장 구문의 단어들 (여러 개면 가장 긴 것)
-function phraseAt(w) {
-  if (!w.classList.contains('ph')) return null;
-  const by = phraseIndex(), ws = [...w.closest('.sent').querySelectorAll('.w')], keys = ws.map(el => el.dataset.k), at = ws.indexOf(w);
-  let best = null;
+// 이 단어를 품은 저장 구문들의 단어 목록 (긴 것부터)
+function phrasesAt(w) {
+  if (!w.classList.contains('ph')) return [];
+  const by = phraseIndex(), ws = [...w.closest('.sent').querySelectorAll('.w')], keys = ws.map(el => el.dataset.k), at = ws.indexOf(w), out = [];
   keys.forEach((k, i) => {
-    for (const parts of by[k] || []) if (i <= at && at < i + parts.length && parts.length > (best?.length || 0) && parts.every((p, j) => keys[i + j] === p)) best = ws.slice(i, i + parts.length);
+    for (const parts of by[k] || []) if (i <= at && at < i + parts.length && parts.every((p, j) => keys[i + j] === p)) out.push(ws.slice(i, i + parts.length));
   });
-  return best;
+  return out.sort((a, b) => b.length - a.length);
 }
 document.addEventListener('pointercancel', cancelDrag);
 // 드래그 중에는 화면이 스크롤되지 않게
