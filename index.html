@@ -70,7 +70,7 @@ main{max-width:1100px;margin:0 auto;padding:16px}
 #pTrans{font-size:17px;margin:8px 0;padding:8px 10px;border-radius:8px;background:var(--play)}
 .w.sn{background:var(--new)}
 .w.s1{background:var(--l1)}.w.s2{background:var(--l2)}.w.s3{background:var(--l3)}.w.s4{background:var(--l4)}
-.w.ph{text-decoration:underline dotted var(--phl);text-decoration-thickness:2px;text-underline-offset:6px}
+.w.ph{background:var(--l2);box-shadow:inset 0 -3px 0 var(--phl)} /* 저장한 구문: 파란 새 단어 위에도 노란 형광펜 + 밑줄 */
 .w.sel{outline:2px solid var(--accent)}
 .player select{width:auto}
 /* 레슨 편집: 문장(문단)마다 한 칸, 영상은 1분 단위로 묶음 */
@@ -104,6 +104,7 @@ main{max-width:1100px;margin:0 auto;padding:16px}
 #pSuggest .pos i{font-style:normal;font-size:12px;font-weight:700;color:var(--muted);min-width:3.2em}
 #pMeaning{line-height:1.5;resize:vertical}
 .mean{white-space:pre-line;line-height:1.45}
+.mean mark{background:rgba(255,196,60,.38);color:inherit;font-weight:700;border-radius:4px;padding:0 2px}
 .defs{max-height:200px;overflow:auto;font-size:14px;padding-left:20px}
 .defs li{margin-bottom:4px}
 .links a{color:var(--accent);font-size:14px;margin-right:10px}
@@ -827,6 +828,11 @@ const phraseKey = parts => parts.join(curLang() === 'ja' ? '\u200b' : ' ');
 const plain = k => k.replace(/\u200b/g, '');
 const norm = w => w.toLowerCase().replace(/’/g, "'");
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+// 뜻 보여 주기: **굵게** 한 부분과 단어 자체를 형광펜으로
+function fmtMean(k, m) {
+  const h = esc(m).replace(/\*\*(.+?)\*\*/g, '<mark>$1</mark>'), w = esc(plain(k)).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return w ? h.replace(new RegExp(`(?<![\\w>])(${w})(?![\\w<])`, 'gi'), '<mark>$1</mark>') : h;
+}
 const $ = id => document.getElementById(id);
 const isLearning = s => s >= 1 && s <= 4;
 const isPhrase = k => PH_SEP.test(k);
@@ -1510,7 +1516,7 @@ function phraseIndex() {
   }
   return by;
 }
-// 본문에서 저장한 구문에 점선 밑줄
+// 본문에서 저장한 구문에 형광펜
 function markPhrases() {
   const by = phraseIndex();
   document.querySelectorAll('#text .w.ph').forEach(el => el.classList.remove('ph'));
@@ -1665,8 +1671,8 @@ $('pLinks').addEventListener('click', async e => {
     if (r.status === 401) localStorage.removeItem('ml_ask_token');
     if (j.answer) {
       if (selected !== k) return;
-      box.innerHTML = esc(j.answer).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>') + '<div><button id="pUseAns" class="primary">이 답을 뜻으로 저장</button></div>';
-      box.dataset.answer = j.answer.replace(/\*\*(.+?)\*\*/g, '$1').replace(/^\s*[-*] /gm, '• ');
+      box.innerHTML = fmtMean(k, j.answer) + '<div><button id="pUseAns" class="primary">이 답을 뜻으로 저장</button></div>';
+      box.dataset.answer = j.answer.replace(/^\s*[-*] /gm, '• '); // **굵게**는 남겨서 저장 후에도 형광펜으로
       return;
     }
     msg = j.error || '답을 받지 못했어요';
@@ -1880,7 +1886,7 @@ function renderSentExtra() {
   $('sList').innerHTML = items.length ? items.map(k => {
     const w = words[k];
     return `<div class="lq" data-k="${esc(k)}"><span class="lv">${w.status}</span>
-      <div style="flex:1;min-width:0"><b>${esc(k)}</b><div class="muted mean">${esc(w.meaning || '(뜻 없음)')}</div></div>
+      <div style="flex:1;min-width:0"><b>${esc(k)}</b><div class="muted mean">${w.meaning ? fmtMean(k, w.meaning) : '(뜻 없음)'}</div></div>
       <button data-say="${esc(k)}" aria-label="듣기">${ic('listen')}</button></div>`;
   }).join('') : '<div class="muted">이 문장에 저장한 단어가 없어요. 단어를 누르거나 여러 단어를 드래그해 저장하세요.</div>';
   $('sTrans').textContent = settings.trans ? '번역 숨기기' : '번역 보기';
@@ -2142,7 +2148,7 @@ function renderVocab() {
     .map(([v, t]) => `<button data-s="${v}" class="${v === s ? 'on' : ''}">${t}</button>`).join('');
   $('vList').innerHTML = rows.map(([k, w]) => `<div class="vrow" data-k="${esc(k)}">
       <div><b>${esc(k)}</b> <button class="ldel" data-say="${esc(k)}" aria-label="듣기">${ic('listen')}</button><div class="ex">${esc(w.example || '')}</div></div>
-      <div class="mean">${esc(w.meaning || '')}</div>
+      <div class="mean">${fmtMean(k, w.meaning || '')}</div>
       <div class="row status">${btns(k, w.status)}</div></div>`).join('')
     || '<div class="muted">단어가 없어요</div>';
 }
@@ -2202,7 +2208,7 @@ function renderCard(revealed) {
   box.innerHTML = `<div class="muted">${qi + 1} / ${queue.length} · ${ic('mastered')} ${Math.min(w.ok || 0, need)}/${need}${w.again ? ' · 지난번 몰랐어요' : ''}</div>
     <div class="word ${k.length > 30 ? 'long' : ''}">${esc(k)} <button id="cardSpeak" aria-label="듣기">${ic('listen')}</button></div>
     <div class="ex" style="margin-top:8px">${ex}</div>
-    ${revealed ? `<div class="meaning mean">${esc(w.meaning || '(뜻 없음)')}</div>
+    ${revealed ? `<div class="meaning mean">${w.meaning ? fmtMean(k, w.meaning) : '(뜻 없음)'}</div>
       <div class="row" style="justify-content:center;margin-top:16px">
         <button onclick="grade(false)">😵 몰랐어요</button><button class="primary" onclick="grade(true)">😀 알았어요</button></div>`
     : `<div style="margin-top:16px"><button class="primary" onclick="renderCard(true)">뜻 보기</button></div>`}
